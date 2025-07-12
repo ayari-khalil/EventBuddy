@@ -1,0 +1,161 @@
+{
+  "annotations": {
+    "changelogDate": "20250712144346"
+  },
+  "applications": "*",
+  "clientRootFolder": "gmodule",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "gridName",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "pageSize",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "pagerAllowedPageSizes",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "pagerShowPageSizeSelector",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "pagerShowNavigationButtons",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "allowSorting",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "sortingMode",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "allowFiltering",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "filterRowVisible",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "headerFilterVisible",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "allowSearch",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "searchPanelVisible",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "searchPanelWidth",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "searchPanelPlaceholder",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "allowColumnChooser",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "columnChooserEnabled",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "columnHidingEnabled",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "allowExport",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "exportEnabled",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "exportFileName",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "allowGrouping",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "groupPanelVisible",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "allowColumnReordering",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "allowColumnResizing",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "selectionMode",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "selectionAllowSelectAll",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "selectionShowCheckBoxesMode",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "editingMode",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "editingAllowAdding",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "editingAllowUpdating",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "editingAllowDeleting",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "createdDate",
+      "fieldType": "Instant"
+    }
+  ],
+  "microserviceName": "gmodule",
+  "name": "GridConfiguration",
+  "pagination": "pagination",
+  "relationships": [
+    {
+      "otherEntityName": "gridColumn",
+      "otherEntityRelationshipName": "gridConfiguration",
+      "relationshipName": "columns",
+      "relationshipSide": "left",
+      "relationshipType": "one-to-many"
+    },
+    {
+      "otherEntityName": "gridToolbarItem",
+      "otherEntityRelationshipName": "gridConfiguration",
+      "relationshipName": "toolbarItems",
+      "relationshipSide": "left",
+      "relationshipType": "one-to-many"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

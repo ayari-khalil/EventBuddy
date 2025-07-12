@@ -1,0 +1,162 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (gridConfiguration(); as gridConfigurationRef) {
+      <div>
+        <h2 data-cy="gridConfigurationDetailsHeading">
+          <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.detail.title">Grid Configuration</span>
+        </h2>
+
+        <hr />
+
+        <jhi-alert-error />
+
+        <jhi-alert />
+
+        <dl class="row-md jh-entity-details">
+          <dt><span jhiTranslate="global.field.id">ID</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.id }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.gridName">Grid Name</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.gridName }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.pageSize">Page Size</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.pageSize }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.pagerAllowedPageSizes">Pager Allowed Page Sizes</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.pagerAllowedPageSizes }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.pagerShowPageSizeSelector">Pager Show Page Size Selector</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.pagerShowPageSizeSelector }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.pagerShowNavigationButtons">Pager Show Navigation Buttons</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.pagerShowNavigationButtons }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowSorting">Allow Sorting</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.allowSorting }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.sortingMode">Sorting Mode</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.sortingMode }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowFiltering">Allow Filtering</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.allowFiltering }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.filterRowVisible">Filter Row Visible</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.filterRowVisible }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.headerFilterVisible">Header Filter Visible</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.headerFilterVisible }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowSearch">Allow Search</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.allowSearch }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.searchPanelVisible">Search Panel Visible</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.searchPanelVisible }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.searchPanelWidth">Search Panel Width</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.searchPanelWidth }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.searchPanelPlaceholder">Search Panel Placeholder</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.searchPanelPlaceholder }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowColumnChooser">Allow Column Chooser</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.allowColumnChooser }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.columnChooserEnabled">Column Chooser Enabled</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.columnChooserEnabled }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.columnHidingEnabled">Column Hiding Enabled</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.columnHidingEnabled }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowExport">Allow Export</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.allowExport }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.exportEnabled">Export Enabled</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.exportEnabled }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.exportFileName">Export File Name</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.exportFileName }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowGrouping">Allow Grouping</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.allowGrouping }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.groupPanelVisible">Group Panel Visible</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.groupPanelVisible }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowColumnReordering">Allow Column Reordering</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.allowColumnReordering }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowColumnResizing">Allow Column Resizing</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.allowColumnResizing }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.selectionMode">Selection Mode</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.selectionMode }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.selectionAllowSelectAll">Selection Allow Select All</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.selectionAllowSelectAll }}</span>
+          </dd>
+          <dt>
+            <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.selectionShowCheckBoxesMode">Selection Show Check Boxes Mode</span>
+          </dt>
+          <dd>
+            <span>{{ gridConfigurationRef.selectionShowCheckBoxesMode }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.editingMode">Editing Mode</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.editingMode }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.editingAllowAdding">Editing Allow Adding</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.editingAllowAdding }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.editingAllowUpdating">Editing Allow Updating</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.editingAllowUpdating }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.editingAllowDeleting">Editing Allow Deleting</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.editingAllowDeleting }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.createdDate">Created Date</span></dt>
+          <dd>
+            <span>{{ gridConfigurationRef.createdDate | formatMediumDatetime }}</span>
+          </dd>
+        </dl>
+
+        <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+          <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+        </button>
+
+        <button type="button" [routerLink]="['/gmodule/grid-configuration', gridConfigurationRef.id, 'edit']" class="btn btn-primary">
+          <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+        </button>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,54 @@
+{
+  "annotations": {
+    "changelogDate": "20250712144348"
+  },
+  "applications": "*",
+  "clientRootFolder": "gmodule",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "location",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "widget",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "icon",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "text",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "hint",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "onClickAction",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "visible",
+      "fieldType": "Boolean"
+    }
+  ],
+  "microserviceName": "gmodule",
+  "name": "GridToolbarItem",
+  "pagination": "pagination",
+  "relationships": [
+    {
+      "otherEntityField": "gridName",
+      "otherEntityName": "gridConfiguration",
+      "otherEntityRelationshipName": "toolbarItems",
+      "relationshipName": "gridConfiguration",
+      "relationshipSide": "right",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

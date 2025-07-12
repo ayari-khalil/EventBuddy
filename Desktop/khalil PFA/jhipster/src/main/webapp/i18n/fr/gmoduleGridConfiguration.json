@@ -1,0 +1,57 @@
+{
+  "gmoduleApp": {
+    "gmoduleGridConfiguration": {
+      "home": {
+        "title": "GridConfigurations",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Grid Configuration",
+        "createOrEditLabel": "Créer ou éditer un Grid Configuration",
+        "notFound": "Aucun Grid Configuration trouvé"
+      },
+      "created": "Un nouveau Grid Configuration a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Grid Configuration avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Grid Configuration avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Grid Configuration {{ id }} ?"
+      },
+      "detail": {
+        "title": "Grid Configuration"
+      },
+      "id": "ID",
+      "gridName": "Grid Name",
+      "pageSize": "Page Size",
+      "pagerAllowedPageSizes": "Pager Allowed Page Sizes",
+      "pagerShowPageSizeSelector": "Pager Show Page Size Selector",
+      "pagerShowNavigationButtons": "Pager Show Navigation Buttons",
+      "allowSorting": "Allow Sorting",
+      "sortingMode": "Sorting Mode",
+      "allowFiltering": "Allow Filtering",
+      "filterRowVisible": "Filter Row Visible",
+      "headerFilterVisible": "Header Filter Visible",
+      "allowSearch": "Allow Search",
+      "searchPanelVisible": "Search Panel Visible",
+      "searchPanelWidth": "Search Panel Width",
+      "searchPanelPlaceholder": "Search Panel Placeholder",
+      "allowColumnChooser": "Allow Column Chooser",
+      "columnChooserEnabled": "Column Chooser Enabled",
+      "columnHidingEnabled": "Column Hiding Enabled",
+      "allowExport": "Allow Export",
+      "exportEnabled": "Export Enabled",
+      "exportFileName": "Export File Name",
+      "allowGrouping": "Allow Grouping",
+      "groupPanelVisible": "Group Panel Visible",
+      "allowColumnReordering": "Allow Column Reordering",
+      "allowColumnResizing": "Allow Column Resizing",
+      "selectionMode": "Selection Mode",
+      "selectionAllowSelectAll": "Selection Allow Select All",
+      "selectionShowCheckBoxesMode": "Selection Show Check Boxes Mode",
+      "editingMode": "Editing Mode",
+      "editingAllowAdding": "Editing Allow Adding",
+      "editingAllowUpdating": "Editing Allow Updating",
+      "editingAllowDeleting": "Editing Allow Deleting",
+      "createdDate": "Created Date",
+      "columns": "Columns",
+      "toolbarItems": "Toolbar Items"
+    }
+  }
+}

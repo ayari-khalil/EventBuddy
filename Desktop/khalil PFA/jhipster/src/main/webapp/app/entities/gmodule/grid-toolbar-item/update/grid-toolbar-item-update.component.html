@@ -1,0 +1,103 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-grid-toolbar-item-heading"
+        data-cy="GridToolbarItemCreateUpdateHeading"
+        jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.home.createOrEditLabel"
+      >
+        Créer ou éditer un Grid Toolbar Item
+      </h2>
+
+      <div>
+        <jhi-alert-error />
+
+        @if (editForm.controls.id.value !== null) {
+          <div class="mb-3">
+            <label class="form-label" for="field_id" jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.id">ID</label>
+            <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+          </div>
+        }
+
+        <div class="mb-3">
+          <label class="form-label" for="field_location" jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.location">Location</label>
+          <input type="text" class="form-control" name="location" id="field_location" data-cy="location" formControlName="location" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_widget" jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.widget">Widget</label>
+          <input type="text" class="form-control" name="widget" id="field_widget" data-cy="widget" formControlName="widget" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_icon" jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.icon">Icon</label>
+          <input type="text" class="form-control" name="icon" id="field_icon" data-cy="icon" formControlName="icon" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_text" jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.text">Text</label>
+          <input type="text" class="form-control" name="text" id="field_text" data-cy="text" formControlName="text" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_hint" jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.hint">Hint</label>
+          <input type="text" class="form-control" name="hint" id="field_hint" data-cy="hint" formControlName="hint" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_onClickAction" jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.onClickAction"
+            >On Click Action</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="onClickAction"
+            id="field_onClickAction"
+            data-cy="onClickAction"
+            formControlName="onClickAction"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_visible" jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.visible">Visible</label>
+          <input type="checkbox" class="form-check" name="visible" id="field_visible" data-cy="visible" formControlName="visible" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_gridConfiguration" jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.gridConfiguration"
+            >Grid Configuration</label
+          >
+          <select
+            class="form-control"
+            id="field_gridConfiguration"
+            data-cy="gridConfiguration"
+            name="gridConfiguration"
+            formControlName="gridConfiguration"
+            [compareWith]="compareGridConfiguration"
+          >
+            <option [ngValue]="null"></option>
+            @for (gridConfigurationOption of gridConfigurationsSharedCollection; track $index) {
+              <option [ngValue]="gridConfigurationOption">{{ gridConfigurationOption.gridName }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

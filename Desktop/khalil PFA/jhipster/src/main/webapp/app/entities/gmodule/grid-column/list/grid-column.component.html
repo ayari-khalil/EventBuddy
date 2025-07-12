@@ -1,0 +1,182 @@
+<div>
+  <h2 id="page-heading" data-cy="GridColumnHeading">
+    <span jhiTranslate="gmoduleApp.gmoduleGridColumn.home.title">GridColumns</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading">
+        <fa-icon icon="sync" [animation]="isLoading ? 'spin' : undefined"></fa-icon>
+        <span jhiTranslate="gmoduleApp.gmoduleGridColumn.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-grid-column"
+        [routerLink]="['/gmodule/grid-column/new']"
+      >
+        <fa-icon icon="plus"></fa-icon>
+        <span jhiTranslate="gmoduleApp.gmoduleGridColumn.home.createLabel">Créer un nouveau Grid Column</span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error />
+
+  <jhi-alert />
+
+  @if (gridColumns().length === 0) {
+    <div class="alert alert-warning" id="no-result">
+      <span jhiTranslate="gmoduleApp.gmoduleGridColumn.home.notFound">Aucun Grid Column trouvé</span>
+    </div>
+  } @else {
+    <div class="table-responsive table-entities" id="entities">
+      <table class="table table-striped" aria-describedby="page-heading">
+        <thead>
+          <tr jhiSort [(sortState)]="sortState" (sortChange)="navigateToWithComponentValues($event)">
+            <th scope="col" jhiSortBy="id">
+              <div class="d-flex">
+                <span jhiTranslate="global.field.id">ID</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="dataField">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridColumn.dataField">Data Field</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="caption">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridColumn.caption">Caption</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="visible">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridColumn.visible">Visible</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="dataType">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridColumn.dataType">Data Type</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="format">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridColumn.format">Format</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="width">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridColumn.width">Width</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="allowSorting">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridColumn.allowSorting">Allow Sorting</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="allowFiltering">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridColumn.allowFiltering">Allow Filtering</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="gridConfiguration.gridName">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridColumn.gridConfiguration">Grid Configuration</span>
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (gridColumn of gridColumns(); track trackId(gridColumn)) {
+            <tr data-cy="entityTable">
+              <td>
+                <a [routerLink]="['/gmodule/grid-column', gridColumn.id, 'view']">{{ gridColumn.id }}</a>
+              </td>
+              <td>{{ gridColumn.dataField }}</td>
+              <td>{{ gridColumn.caption }}</td>
+              <td>{{ gridColumn.visible }}</td>
+              <td>{{ gridColumn.dataType }}</td>
+              <td>{{ gridColumn.format }}</td>
+              <td>{{ gridColumn.width }}</td>
+              <td>{{ gridColumn.allowSorting }}</td>
+              <td>{{ gridColumn.allowFiltering }}</td>
+              <td>
+                @if (gridColumn.gridConfiguration) {
+                  <div>
+                    <a [routerLink]="['/gmodule/grid-configuration', gridColumn.gridConfiguration.id, 'view']">{{
+                      gridColumn.gridConfiguration.gridName
+                    }}</a>
+                  </div>
+                }
+              </td>
+              <td class="text-end">
+                <div class="btn-group">
+                  <a
+                    [routerLink]="['/gmodule/grid-column', gridColumn.id, 'view']"
+                    class="btn btn-info btn-sm"
+                    data-cy="entityDetailsButton"
+                  >
+                    <fa-icon icon="eye"></fa-icon>
+                    <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+                  </a>
+
+                  <a
+                    [routerLink]="['/gmodule/grid-column', gridColumn.id, 'edit']"
+                    class="btn btn-primary btn-sm"
+                    data-cy="entityEditButton"
+                  >
+                    <fa-icon icon="pencil-alt"></fa-icon>
+                    <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+                  </a>
+
+                  <button type="submit" (click)="delete(gridColumn)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                    <fa-icon icon="times"></fa-icon>
+                    <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  @if (gridColumns().length > 0) {
+    <div>
+      <div class="d-flex justify-content-center">
+        <jhi-item-count [params]="{ page, totalItems, itemsPerPage }" />
+      </div>
+
+      <div class="d-flex justify-content-center">
+        <ngb-pagination
+          [collectionSize]="totalItems"
+          [page]="page"
+          [pageSize]="itemsPerPage"
+          [maxSize]="5"
+          [rotate]="true"
+          [boundaryLinks]="true"
+          (pageChange)="navigateToPage($event)"
+        ></ngb-pagination>
+      </div>
+    </div>
+  }
+</div>

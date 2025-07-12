@@ -1,0 +1,32 @@
+{
+  "gmoduleApp": {
+    "gmoduleGridColumn": {
+      "home": {
+        "title": "GridColumns",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Grid Column",
+        "createOrEditLabel": "Créer ou éditer un Grid Column",
+        "notFound": "Aucun Grid Column trouvé"
+      },
+      "created": "Un nouveau Grid Column a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Grid Column avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Grid Column avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Grid Column {{ id }} ?"
+      },
+      "detail": {
+        "title": "Grid Column"
+      },
+      "id": "ID",
+      "dataField": "Data Field",
+      "caption": "Caption",
+      "visible": "Visible",
+      "dataType": "Data Type",
+      "format": "Format",
+      "width": "Width",
+      "allowSorting": "Allow Sorting",
+      "allowFiltering": "Allow Filtering",
+      "gridConfiguration": "Grid Configuration"
+    }
+  }
+}

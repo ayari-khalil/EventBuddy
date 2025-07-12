@@ -1,0 +1,76 @@
+entity GridConfiguration {
+  gridName String required,
+  pageSize Integer,
+  pagerAllowedPageSizes String,
+  pagerShowPageSizeSelector Boolean,
+  pagerShowNavigationButtons Boolean,
+
+  allowSorting Boolean,
+  sortingMode String,
+
+  allowFiltering Boolean,
+  filterRowVisible Boolean,
+  headerFilterVisible Boolean,
+
+  allowSearch Boolean,
+  searchPanelVisible Boolean,
+  searchPanelWidth Integer,
+  searchPanelPlaceholder String,
+
+  allowColumnChooser Boolean,
+  columnChooserEnabled Boolean,
+  columnHidingEnabled Boolean,
+
+  allowExport Boolean,
+  exportEnabled Boolean,
+  exportFileName String,
+
+  allowGrouping Boolean,
+  groupPanelVisible Boolean,
+  allowColumnReordering Boolean,
+  allowColumnResizing Boolean,
+
+  selectionMode String,
+  selectionAllowSelectAll Boolean,
+  selectionShowCheckBoxesMode String,
+
+  editingMode String,
+  editingAllowAdding Boolean,
+  editingAllowUpdating Boolean,
+  editingAllowDeleting Boolean,
+
+  createdDate Instant
+}
+
+dto GridConfiguration, GridColumn, GridToolbarItem with mapstruct
+paginate all with pagination
+service all with serviceClass
+
+entity GridColumn {
+  dataField String required,
+  caption String,
+  visible Boolean,
+  dataType String, // string, number, date, boolean
+  format String, // optional: e.g. 'currency', 'shortDate'
+  width Integer,
+  allowSorting Boolean,
+  allowFiltering Boolean
+}
+
+relationship OneToMany {
+  GridConfiguration{columns} to GridColumn{gridConfiguration(gridName)}
+}
+
+entity GridToolbarItem {
+  location String, // 'before', 'after', 'center'
+  widget String, // e.g., 'dxButton'
+  icon String,
+  text String,
+  hint String,
+  onClickAction String, // method name or identifier
+  visible Boolean
+}
+
+relationship OneToMany {
+  GridConfiguration{toolbarItems} to GridToolbarItem{gridConfiguration(gridName)}
+}

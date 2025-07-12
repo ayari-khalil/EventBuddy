@@ -1,0 +1,72 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (gridColumn(); as gridColumnRef) {
+      <div>
+        <h2 data-cy="gridColumnDetailsHeading"><span jhiTranslate="gmoduleApp.gmoduleGridColumn.detail.title">Grid Column</span></h2>
+
+        <hr />
+
+        <jhi-alert-error />
+
+        <jhi-alert />
+
+        <dl class="row-md jh-entity-details">
+          <dt><span jhiTranslate="global.field.id">ID</span></dt>
+          <dd>
+            <span>{{ gridColumnRef.id }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridColumn.dataField">Data Field</span></dt>
+          <dd>
+            <span>{{ gridColumnRef.dataField }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridColumn.caption">Caption</span></dt>
+          <dd>
+            <span>{{ gridColumnRef.caption }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridColumn.visible">Visible</span></dt>
+          <dd>
+            <span>{{ gridColumnRef.visible }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridColumn.dataType">Data Type</span></dt>
+          <dd>
+            <span>{{ gridColumnRef.dataType }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridColumn.format">Format</span></dt>
+          <dd>
+            <span>{{ gridColumnRef.format }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridColumn.width">Width</span></dt>
+          <dd>
+            <span>{{ gridColumnRef.width }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridColumn.allowSorting">Allow Sorting</span></dt>
+          <dd>
+            <span>{{ gridColumnRef.allowSorting }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridColumn.allowFiltering">Allow Filtering</span></dt>
+          <dd>
+            <span>{{ gridColumnRef.allowFiltering }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridColumn.gridConfiguration">Grid Configuration</span></dt>
+          <dd>
+            @if (gridColumn()!.gridConfiguration) {
+              <div>
+                <a [routerLink]="['/gmodule/grid-configuration', gridColumn()!.gridConfiguration?.id, 'view']">{{
+                  gridColumnRef.gridConfiguration?.gridName
+                }}</a>
+              </div>
+            }
+          </dd>
+        </dl>
+
+        <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+          <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+        </button>
+
+        <button type="button" [routerLink]="['/gmodule/grid-column', gridColumnRef.id, 'edit']" class="btn btn-primary">
+          <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+        </button>
+      </div>
+    }
+  </div>
+</div>

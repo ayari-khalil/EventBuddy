@@ -1,0 +1,59 @@
+{
+  "annotations": {
+    "changelogDate": "20250712144347"
+  },
+  "applications": "*",
+  "clientRootFolder": "gmodule",
+  "databaseType": "sql",
+  "dto": "mapstruct",
+  "fields": [
+    {
+      "fieldName": "dataField",
+      "fieldType": "String",
+      "fieldValidateRules": ["required"]
+    },
+    {
+      "fieldName": "caption",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "visible",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "dataType",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "format",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "width",
+      "fieldType": "Integer"
+    },
+    {
+      "fieldName": "allowSorting",
+      "fieldType": "Boolean"
+    },
+    {
+      "fieldName": "allowFiltering",
+      "fieldType": "Boolean"
+    }
+  ],
+  "microserviceName": "gmodule",
+  "name": "GridColumn",
+  "pagination": "pagination",
+  "relationships": [
+    {
+      "otherEntityField": "gridName",
+      "otherEntityName": "gridConfiguration",
+      "otherEntityRelationshipName": "columns",
+      "relationshipName": "gridConfiguration",
+      "relationshipSide": "right",
+      "relationshipType": "many-to-one"
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

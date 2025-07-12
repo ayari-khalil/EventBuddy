@@ -1,0 +1,31 @@
+{
+  "gmoduleApp": {
+    "gmoduleGridToolbarItem": {
+      "home": {
+        "title": "GridToolbarItems",
+        "refreshListLabel": "Actualiser la liste",
+        "createLabel": "Créer un nouveau Grid Toolbar Item",
+        "createOrEditLabel": "Créer ou éditer un Grid Toolbar Item",
+        "notFound": "Aucun Grid Toolbar Item trouvé"
+      },
+      "created": "Un nouveau Grid Toolbar Item a été créé avec l'identifiant {{ param }}",
+      "updated": "Le Grid Toolbar Item avec l'identifiant {{ param }} a été mis à jour",
+      "deleted": "Le Grid Toolbar Item avec l'identifiant {{ param }} a été supprimé",
+      "delete": {
+        "question": "Êtes-vous certain de vouloir supprimer le Grid Toolbar Item {{ id }} ?"
+      },
+      "detail": {
+        "title": "Grid Toolbar Item"
+      },
+      "id": "ID",
+      "location": "Location",
+      "widget": "Widget",
+      "icon": "Icon",
+      "text": "Text",
+      "hint": "Hint",
+      "onClickAction": "On Click Action",
+      "visible": "Visible",
+      "gridConfiguration": "Grid Configuration"
+    }
+  }
+}

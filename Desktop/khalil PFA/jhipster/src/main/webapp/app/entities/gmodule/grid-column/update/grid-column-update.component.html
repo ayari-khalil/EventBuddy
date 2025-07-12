@@ -1,0 +1,123 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-grid-column-heading"
+        data-cy="GridColumnCreateUpdateHeading"
+        jhiTranslate="gmoduleApp.gmoduleGridColumn.home.createOrEditLabel"
+      >
+        Créer ou éditer un Grid Column
+      </h2>
+
+      <div>
+        <jhi-alert-error />
+
+        @if (editForm.controls.id.value !== null) {
+          <div class="mb-3">
+            <label class="form-label" for="field_id" jhiTranslate="gmoduleApp.gmoduleGridColumn.id">ID</label>
+            <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+          </div>
+        }
+
+        @let dataFieldRef = editForm.get('dataField')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_dataField" jhiTranslate="gmoduleApp.gmoduleGridColumn.dataField">Data Field</label>
+          <input type="text" class="form-control" name="dataField" id="field_dataField" data-cy="dataField" formControlName="dataField" />
+          @if (dataFieldRef.invalid && (dataFieldRef.dirty || dataFieldRef.touched)) {
+            <div>
+              @if (editForm.get('dataField')?.errors?.required) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_caption" jhiTranslate="gmoduleApp.gmoduleGridColumn.caption">Caption</label>
+          <input type="text" class="form-control" name="caption" id="field_caption" data-cy="caption" formControlName="caption" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_visible" jhiTranslate="gmoduleApp.gmoduleGridColumn.visible">Visible</label>
+          <input type="checkbox" class="form-check" name="visible" id="field_visible" data-cy="visible" formControlName="visible" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_dataType" jhiTranslate="gmoduleApp.gmoduleGridColumn.dataType">Data Type</label>
+          <input type="text" class="form-control" name="dataType" id="field_dataType" data-cy="dataType" formControlName="dataType" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_format" jhiTranslate="gmoduleApp.gmoduleGridColumn.format">Format</label>
+          <input type="text" class="form-control" name="format" id="field_format" data-cy="format" formControlName="format" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_width" jhiTranslate="gmoduleApp.gmoduleGridColumn.width">Width</label>
+          <input type="number" class="form-control" name="width" id="field_width" data-cy="width" formControlName="width" />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_allowSorting" jhiTranslate="gmoduleApp.gmoduleGridColumn.allowSorting">Allow Sorting</label>
+          <input
+            type="checkbox"
+            class="form-check"
+            name="allowSorting"
+            id="field_allowSorting"
+            data-cy="allowSorting"
+            formControlName="allowSorting"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_allowFiltering" jhiTranslate="gmoduleApp.gmoduleGridColumn.allowFiltering"
+            >Allow Filtering</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="allowFiltering"
+            id="field_allowFiltering"
+            data-cy="allowFiltering"
+            formControlName="allowFiltering"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_gridConfiguration" jhiTranslate="gmoduleApp.gmoduleGridColumn.gridConfiguration"
+            >Grid Configuration</label
+          >
+          <select
+            class="form-control"
+            id="field_gridConfiguration"
+            data-cy="gridConfiguration"
+            name="gridConfiguration"
+            formControlName="gridConfiguration"
+            [compareWith]="compareGridConfiguration"
+          >
+            <option [ngValue]="null"></option>
+            @for (gridConfigurationOption of gridConfigurationsSharedCollection; track $index) {
+              <option [ngValue]="gridConfigurationOption">{{ gridConfigurationOption.gridName }}</option>
+            }
+          </select>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd
+                        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+    <!--
+        Added the entity GridConfiguration.
+    -->
+    <changeSet id="20250712144346-1" author="jhipster">
+        <createTable tableName="grid_configuration">
+            <column name="id" type="bigint" autoIncrement="true" startWith="1500">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="grid_name" type="varchar(255)">
+                <constraints nullable="false" />
+            </column>
+            <column name="page_size" type="integer">
+                <constraints nullable="true" />
+            </column>
+            <column name="pager_allowed_page_sizes" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+            <column name="pager_show_page_size_selector" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="pager_show_navigation_buttons" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="allow_sorting" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="sorting_mode" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+            <column name="allow_filtering" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="filter_row_visible" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="header_filter_visible" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="allow_search" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="search_panel_visible" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="search_panel_width" type="integer">
+                <constraints nullable="true" />
+            </column>
+            <column name="search_panel_placeholder" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+            <column name="allow_column_chooser" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="column_chooser_enabled" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="column_hiding_enabled" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="allow_export" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="export_enabled" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="export_file_name" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+            <column name="allow_grouping" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="group_panel_visible" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="allow_column_reordering" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="allow_column_resizing" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="selection_mode" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+            <column name="selection_allow_select_all" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="selection_show_check_boxes_mode" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+            <column name="editing_mode" type="varchar(255)">
+                <constraints nullable="true" />
+            </column>
+            <column name="editing_allow_adding" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="editing_allow_updating" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="editing_allow_deleting" type="boolean">
+                <constraints nullable="true" />
+            </column>
+            <column name="created_date" type="${datetimeType}">
+                <constraints nullable="true" />
+            </column>
+            <!-- jhipster-needle-liquibase-add-column - JHipster will add columns here -->
+        </createTable>
+        <dropDefaultValue tableName="grid_configuration" columnName="created_date" columnDataType="${datetimeType}"/>
+    </changeSet>
+
+    <!-- jhipster-needle-liquibase-add-changeset - JHipster will add changesets here -->
+
+    <!--
+        Load sample data generated with Faker.js
+        - This data can be easily edited using a CSV editor (or even MS Excel) and
+          is located in the 'src/main/resources/config/liquibase/fake-data' directory
+        - By default this data is applied when running with the JHipster 'dev' profile.
+          This can be customized by adding or removing 'faker' in the 'spring.liquibase.contexts'
+          Spring Boot configuration key.
+    -->
+    <changeSet id="20250712144346-1-data" author="jhipster" context="faker">
+        <loadData
+                  file="config/liquibase/fake-data/grid_configuration.csv"
+                  separator=";"
+                  tableName="grid_configuration"
+                  usePreparedStatements="true">
+            <column name="id" type="numeric"/>
+            <column name="grid_name" type="string"/>
+            <column name="page_size" type="numeric"/>
+            <column name="pager_allowed_page_sizes" type="string"/>
+            <column name="pager_show_page_size_selector" type="boolean"/>
+            <column name="pager_show_navigation_buttons" type="boolean"/>
+            <column name="allow_sorting" type="boolean"/>
+            <column name="sorting_mode" type="string"/>
+            <column name="allow_filtering" type="boolean"/>
+            <column name="filter_row_visible" type="boolean"/>
+            <column name="header_filter_visible" type="boolean"/>
+            <column name="allow_search" type="boolean"/>
+            <column name="search_panel_visible" type="boolean"/>
+            <column name="search_panel_width" type="numeric"/>
+            <column name="search_panel_placeholder" type="string"/>
+            <column name="allow_column_chooser" type="boolean"/>
+            <column name="column_chooser_enabled" type="boolean"/>
+            <column name="column_hiding_enabled" type="boolean"/>
+            <column name="allow_export" type="boolean"/>
+            <column name="export_enabled" type="boolean"/>
+            <column name="export_file_name" type="string"/>
+            <column name="allow_grouping" type="boolean"/>
+            <column name="group_panel_visible" type="boolean"/>
+            <column name="allow_column_reordering" type="boolean"/>
+            <column name="allow_column_resizing" type="boolean"/>
+            <column name="selection_mode" type="string"/>
+            <column name="selection_allow_select_all" type="boolean"/>
+            <column name="selection_show_check_boxes_mode" type="string"/>
+            <column name="editing_mode" type="string"/>
+            <column name="editing_allow_adding" type="boolean"/>
+            <column name="editing_allow_updating" type="boolean"/>
+            <column name="editing_allow_deleting" type="boolean"/>
+            <column name="created_date" type="date"/>
+            <!-- jhipster-needle-liquibase-add-loadcolumn - JHipster (and/or extensions) can add load columns here -->
+        </loadData>
+    </changeSet>
+</databaseChangeLog>

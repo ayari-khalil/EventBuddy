@@ -1,0 +1,70 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    @if (gridToolbarItem(); as gridToolbarItemRef) {
+      <div>
+        <h2 data-cy="gridToolbarItemDetailsHeading">
+          <span jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.detail.title">Grid Toolbar Item</span>
+        </h2>
+
+        <hr />
+
+        <jhi-alert-error />
+
+        <jhi-alert />
+
+        <dl class="row-md jh-entity-details">
+          <dt><span jhiTranslate="global.field.id">ID</span></dt>
+          <dd>
+            <span>{{ gridToolbarItemRef.id }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.location">Location</span></dt>
+          <dd>
+            <span>{{ gridToolbarItemRef.location }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.widget">Widget</span></dt>
+          <dd>
+            <span>{{ gridToolbarItemRef.widget }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.icon">Icon</span></dt>
+          <dd>
+            <span>{{ gridToolbarItemRef.icon }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.text">Text</span></dt>
+          <dd>
+            <span>{{ gridToolbarItemRef.text }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.hint">Hint</span></dt>
+          <dd>
+            <span>{{ gridToolbarItemRef.hint }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.onClickAction">On Click Action</span></dt>
+          <dd>
+            <span>{{ gridToolbarItemRef.onClickAction }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.visible">Visible</span></dt>
+          <dd>
+            <span>{{ gridToolbarItemRef.visible }}</span>
+          </dd>
+          <dt><span jhiTranslate="gmoduleApp.gmoduleGridToolbarItem.gridConfiguration">Grid Configuration</span></dt>
+          <dd>
+            @if (gridToolbarItem()!.gridConfiguration) {
+              <div>
+                <a [routerLink]="['/gmodule/grid-configuration', gridToolbarItem()!.gridConfiguration?.id, 'view']">{{
+                  gridToolbarItemRef.gridConfiguration?.gridName
+                }}</a>
+              </div>
+            }
+          </dd>
+        </dl>
+
+        <button type="submit" (click)="previousState()" class="btn btn-info" data-cy="entityDetailsBackButton">
+          <fa-icon icon="arrow-left"></fa-icon>&nbsp;<span jhiTranslate="entity.action.back">Retour</span>
+        </button>
+
+        <button type="button" [routerLink]="['/gmodule/grid-toolbar-item', gridToolbarItemRef.id, 'edit']" class="btn btn-primary">
+          <fa-icon icon="pencil-alt"></fa-icon>&nbsp;<span jhiTranslate="entity.action.edit">Editer</span>
+        </button>
+      </div>
+    }
+  </div>
+</div>

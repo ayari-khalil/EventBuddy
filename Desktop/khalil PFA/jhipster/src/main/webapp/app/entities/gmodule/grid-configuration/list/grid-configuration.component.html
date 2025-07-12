@@ -1,0 +1,359 @@
+<div>
+  <h2 id="page-heading" data-cy="GridConfigurationHeading">
+    <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.home.title">GridConfigurations</span>
+
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-info me-2" (click)="load()" [disabled]="isLoading">
+        <fa-icon icon="sync" [animation]="isLoading ? 'spin' : undefined"></fa-icon>
+        <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.home.refreshListLabel">Actualiser la liste</span>
+      </button>
+
+      <button
+        id="jh-create-entity"
+        data-cy="entityCreateButton"
+        class="btn btn-primary jh-create-entity create-grid-configuration"
+        [routerLink]="['/gmodule/grid-configuration/new']"
+      >
+        <fa-icon icon="plus"></fa-icon>
+        <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.home.createLabel">Créer un nouveau Grid Configuration</span>
+      </button>
+    </div>
+  </h2>
+
+  <jhi-alert-error />
+
+  <jhi-alert />
+
+  @if (gridConfigurations().length === 0) {
+    <div class="alert alert-warning" id="no-result">
+      <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.home.notFound">Aucun Grid Configuration trouvé</span>
+    </div>
+  } @else {
+    <div class="table-responsive table-entities" id="entities">
+      <table class="table table-striped" aria-describedby="page-heading">
+        <thead>
+          <tr jhiSort [(sortState)]="sortState" (sortChange)="navigateToWithComponentValues($event)">
+            <th scope="col" jhiSortBy="id">
+              <div class="d-flex">
+                <span jhiTranslate="global.field.id">ID</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="gridName">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.gridName">Grid Name</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="pageSize">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.pageSize">Page Size</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="pagerAllowedPageSizes">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.pagerAllowedPageSizes">Pager Allowed Page Sizes</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="pagerShowPageSizeSelector">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.pagerShowPageSizeSelector">Pager Show Page Size Selector</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="pagerShowNavigationButtons">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.pagerShowNavigationButtons">Pager Show Navigation Buttons</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="allowSorting">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowSorting">Allow Sorting</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="sortingMode">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.sortingMode">Sorting Mode</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="allowFiltering">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowFiltering">Allow Filtering</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="filterRowVisible">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.filterRowVisible">Filter Row Visible</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="headerFilterVisible">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.headerFilterVisible">Header Filter Visible</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="allowSearch">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowSearch">Allow Search</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="searchPanelVisible">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.searchPanelVisible">Search Panel Visible</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="searchPanelWidth">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.searchPanelWidth">Search Panel Width</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="searchPanelPlaceholder">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.searchPanelPlaceholder">Search Panel Placeholder</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="allowColumnChooser">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowColumnChooser">Allow Column Chooser</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="columnChooserEnabled">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.columnChooserEnabled">Column Chooser Enabled</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="columnHidingEnabled">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.columnHidingEnabled">Column Hiding Enabled</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="allowExport">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowExport">Allow Export</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="exportEnabled">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.exportEnabled">Export Enabled</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="exportFileName">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.exportFileName">Export File Name</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="allowGrouping">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowGrouping">Allow Grouping</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="groupPanelVisible">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.groupPanelVisible">Group Panel Visible</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="allowColumnReordering">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowColumnReordering">Allow Column Reordering</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="allowColumnResizing">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowColumnResizing">Allow Column Resizing</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="selectionMode">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.selectionMode">Selection Mode</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="selectionAllowSelectAll">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.selectionAllowSelectAll">Selection Allow Select All</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="selectionShowCheckBoxesMode">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.selectionShowCheckBoxesMode">Selection Show Check Boxes Mode</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="editingMode">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.editingMode">Editing Mode</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="editingAllowAdding">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.editingAllowAdding">Editing Allow Adding</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="editingAllowUpdating">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.editingAllowUpdating">Editing Allow Updating</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="editingAllowDeleting">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.editingAllowDeleting">Editing Allow Deleting</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col" jhiSortBy="createdDate">
+              <div class="d-flex">
+                <span jhiTranslate="gmoduleApp.gmoduleGridConfiguration.createdDate">Created Date</span>
+
+                <fa-icon class="p-1" icon="sort"></fa-icon>
+              </div>
+            </th>
+            <th scope="col"></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (gridConfiguration of gridConfigurations(); track trackId(gridConfiguration)) {
+            <tr data-cy="entityTable">
+              <td>
+                <a [routerLink]="['/gmodule/grid-configuration', gridConfiguration.id, 'view']">{{ gridConfiguration.id }}</a>
+              </td>
+              <td>{{ gridConfiguration.gridName }}</td>
+              <td>{{ gridConfiguration.pageSize }}</td>
+              <td>{{ gridConfiguration.pagerAllowedPageSizes }}</td>
+              <td>{{ gridConfiguration.pagerShowPageSizeSelector }}</td>
+              <td>{{ gridConfiguration.pagerShowNavigationButtons }}</td>
+              <td>{{ gridConfiguration.allowSorting }}</td>
+              <td>{{ gridConfiguration.sortingMode }}</td>
+              <td>{{ gridConfiguration.allowFiltering }}</td>
+              <td>{{ gridConfiguration.filterRowVisible }}</td>
+              <td>{{ gridConfiguration.headerFilterVisible }}</td>
+              <td>{{ gridConfiguration.allowSearch }}</td>
+              <td>{{ gridConfiguration.searchPanelVisible }}</td>
+              <td>{{ gridConfiguration.searchPanelWidth }}</td>
+              <td>{{ gridConfiguration.searchPanelPlaceholder }}</td>
+              <td>{{ gridConfiguration.allowColumnChooser }}</td>
+              <td>{{ gridConfiguration.columnChooserEnabled }}</td>
+              <td>{{ gridConfiguration.columnHidingEnabled }}</td>
+              <td>{{ gridConfiguration.allowExport }}</td>
+              <td>{{ gridConfiguration.exportEnabled }}</td>
+              <td>{{ gridConfiguration.exportFileName }}</td>
+              <td>{{ gridConfiguration.allowGrouping }}</td>
+              <td>{{ gridConfiguration.groupPanelVisible }}</td>
+              <td>{{ gridConfiguration.allowColumnReordering }}</td>
+              <td>{{ gridConfiguration.allowColumnResizing }}</td>
+              <td>{{ gridConfiguration.selectionMode }}</td>
+              <td>{{ gridConfiguration.selectionAllowSelectAll }}</td>
+              <td>{{ gridConfiguration.selectionShowCheckBoxesMode }}</td>
+              <td>{{ gridConfiguration.editingMode }}</td>
+              <td>{{ gridConfiguration.editingAllowAdding }}</td>
+              <td>{{ gridConfiguration.editingAllowUpdating }}</td>
+              <td>{{ gridConfiguration.editingAllowDeleting }}</td>
+              <td>{{ gridConfiguration.createdDate | formatMediumDatetime }}</td>
+              <td class="text-end">
+                <div class="btn-group">
+                  <a
+                    [routerLink]="['/gmodule/grid-configuration', gridConfiguration.id, 'view']"
+                    class="btn btn-info btn-sm"
+                    data-cy="entityDetailsButton"
+                  >
+                    <fa-icon icon="eye"></fa-icon>
+                    <span class="d-none d-md-inline" jhiTranslate="entity.action.view">Voir</span>
+                  </a>
+
+                  <a
+                    [routerLink]="['/gmodule/grid-configuration', gridConfiguration.id, 'edit']"
+                    class="btn btn-primary btn-sm"
+                    data-cy="entityEditButton"
+                  >
+                    <fa-icon icon="pencil-alt"></fa-icon>
+                    <span class="d-none d-md-inline" jhiTranslate="entity.action.edit">Editer</span>
+                  </a>
+
+                  <button type="submit" (click)="delete(gridConfiguration)" class="btn btn-danger btn-sm" data-cy="entityDeleteButton">
+                    <fa-icon icon="times"></fa-icon>
+                    <span class="d-none d-md-inline" jhiTranslate="entity.action.delete">Supprimer</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+  @if (gridConfigurations().length > 0) {
+    <div>
+      <div class="d-flex justify-content-center">
+        <jhi-item-count [params]="{ page, totalItems, itemsPerPage }" />
+      </div>
+
+      <div class="d-flex justify-content-center">
+        <ngb-pagination
+          [collectionSize]="totalItems"
+          [page]="page"
+          [pageSize]="itemsPerPage"
+          [maxSize]="5"
+          [rotate]="true"
+          [boundaryLinks]="true"
+          (pageChange)="navigateToPage($event)"
+        ></ngb-pagination>
+      </div>
+    </div>
+  }
+</div>

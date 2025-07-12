@@ -1,0 +1,502 @@
+<div class="d-flex justify-content-center">
+  <div class="col-8">
+    <form name="editForm" novalidate (ngSubmit)="save()" [formGroup]="editForm">
+      <h2
+        id="jhi-grid-configuration-heading"
+        data-cy="GridConfigurationCreateUpdateHeading"
+        jhiTranslate="gmoduleApp.gmoduleGridConfiguration.home.createOrEditLabel"
+      >
+        Créer ou éditer un Grid Configuration
+      </h2>
+
+      <div>
+        <jhi-alert-error />
+
+        @if (editForm.controls.id.value !== null) {
+          <div class="mb-3">
+            <label class="form-label" for="field_id" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.id">ID</label>
+            <input type="number" class="form-control" name="id" id="field_id" data-cy="id" formControlName="id" [readonly]="true" />
+          </div>
+        }
+
+        @let gridNameRef = editForm.get('gridName')!;
+        <div class="mb-3">
+          <label class="form-label" for="field_gridName" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.gridName">Grid Name</label>
+          <input type="text" class="form-control" name="gridName" id="field_gridName" data-cy="gridName" formControlName="gridName" />
+          @if (gridNameRef.invalid && (gridNameRef.dirty || gridNameRef.touched)) {
+            <div>
+              @if (editForm.get('gridName')?.errors?.required) {
+                <small class="form-text text-danger" jhiTranslate="entity.validation.required">Ce champ est obligatoire.</small>
+              }
+            </div>
+          }
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_pageSize" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.pageSize">Page Size</label>
+          <input type="number" class="form-control" name="pageSize" id="field_pageSize" data-cy="pageSize" formControlName="pageSize" />
+        </div>
+
+        <div class="mb-3">
+          <label
+            class="form-label"
+            for="field_pagerAllowedPageSizes"
+            jhiTranslate="gmoduleApp.gmoduleGridConfiguration.pagerAllowedPageSizes"
+            >Pager Allowed Page Sizes</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="pagerAllowedPageSizes"
+            id="field_pagerAllowedPageSizes"
+            data-cy="pagerAllowedPageSizes"
+            formControlName="pagerAllowedPageSizes"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label
+            class="form-label"
+            for="field_pagerShowPageSizeSelector"
+            jhiTranslate="gmoduleApp.gmoduleGridConfiguration.pagerShowPageSizeSelector"
+            >Pager Show Page Size Selector</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="pagerShowPageSizeSelector"
+            id="field_pagerShowPageSizeSelector"
+            data-cy="pagerShowPageSizeSelector"
+            formControlName="pagerShowPageSizeSelector"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label
+            class="form-label"
+            for="field_pagerShowNavigationButtons"
+            jhiTranslate="gmoduleApp.gmoduleGridConfiguration.pagerShowNavigationButtons"
+            >Pager Show Navigation Buttons</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="pagerShowNavigationButtons"
+            id="field_pagerShowNavigationButtons"
+            data-cy="pagerShowNavigationButtons"
+            formControlName="pagerShowNavigationButtons"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_allowSorting" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowSorting"
+            >Allow Sorting</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="allowSorting"
+            id="field_allowSorting"
+            data-cy="allowSorting"
+            formControlName="allowSorting"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_sortingMode" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.sortingMode"
+            >Sorting Mode</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="sortingMode"
+            id="field_sortingMode"
+            data-cy="sortingMode"
+            formControlName="sortingMode"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_allowFiltering" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowFiltering"
+            >Allow Filtering</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="allowFiltering"
+            id="field_allowFiltering"
+            data-cy="allowFiltering"
+            formControlName="allowFiltering"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_filterRowVisible" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.filterRowVisible"
+            >Filter Row Visible</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="filterRowVisible"
+            id="field_filterRowVisible"
+            data-cy="filterRowVisible"
+            formControlName="filterRowVisible"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_headerFilterVisible" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.headerFilterVisible"
+            >Header Filter Visible</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="headerFilterVisible"
+            id="field_headerFilterVisible"
+            data-cy="headerFilterVisible"
+            formControlName="headerFilterVisible"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_allowSearch" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowSearch"
+            >Allow Search</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="allowSearch"
+            id="field_allowSearch"
+            data-cy="allowSearch"
+            formControlName="allowSearch"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_searchPanelVisible" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.searchPanelVisible"
+            >Search Panel Visible</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="searchPanelVisible"
+            id="field_searchPanelVisible"
+            data-cy="searchPanelVisible"
+            formControlName="searchPanelVisible"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_searchPanelWidth" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.searchPanelWidth"
+            >Search Panel Width</label
+          >
+          <input
+            type="number"
+            class="form-control"
+            name="searchPanelWidth"
+            id="field_searchPanelWidth"
+            data-cy="searchPanelWidth"
+            formControlName="searchPanelWidth"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label
+            class="form-label"
+            for="field_searchPanelPlaceholder"
+            jhiTranslate="gmoduleApp.gmoduleGridConfiguration.searchPanelPlaceholder"
+            >Search Panel Placeholder</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="searchPanelPlaceholder"
+            id="field_searchPanelPlaceholder"
+            data-cy="searchPanelPlaceholder"
+            formControlName="searchPanelPlaceholder"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_allowColumnChooser" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowColumnChooser"
+            >Allow Column Chooser</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="allowColumnChooser"
+            id="field_allowColumnChooser"
+            data-cy="allowColumnChooser"
+            formControlName="allowColumnChooser"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_columnChooserEnabled" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.columnChooserEnabled"
+            >Column Chooser Enabled</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="columnChooserEnabled"
+            id="field_columnChooserEnabled"
+            data-cy="columnChooserEnabled"
+            formControlName="columnChooserEnabled"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_columnHidingEnabled" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.columnHidingEnabled"
+            >Column Hiding Enabled</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="columnHidingEnabled"
+            id="field_columnHidingEnabled"
+            data-cy="columnHidingEnabled"
+            formControlName="columnHidingEnabled"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_allowExport" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowExport"
+            >Allow Export</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="allowExport"
+            id="field_allowExport"
+            data-cy="allowExport"
+            formControlName="allowExport"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_exportEnabled" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.exportEnabled"
+            >Export Enabled</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="exportEnabled"
+            id="field_exportEnabled"
+            data-cy="exportEnabled"
+            formControlName="exportEnabled"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_exportFileName" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.exportFileName"
+            >Export File Name</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="exportFileName"
+            id="field_exportFileName"
+            data-cy="exportFileName"
+            formControlName="exportFileName"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_allowGrouping" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowGrouping"
+            >Allow Grouping</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="allowGrouping"
+            id="field_allowGrouping"
+            data-cy="allowGrouping"
+            formControlName="allowGrouping"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_groupPanelVisible" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.groupPanelVisible"
+            >Group Panel Visible</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="groupPanelVisible"
+            id="field_groupPanelVisible"
+            data-cy="groupPanelVisible"
+            formControlName="groupPanelVisible"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label
+            class="form-label"
+            for="field_allowColumnReordering"
+            jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowColumnReordering"
+            >Allow Column Reordering</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="allowColumnReordering"
+            id="field_allowColumnReordering"
+            data-cy="allowColumnReordering"
+            formControlName="allowColumnReordering"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_allowColumnResizing" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.allowColumnResizing"
+            >Allow Column Resizing</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="allowColumnResizing"
+            id="field_allowColumnResizing"
+            data-cy="allowColumnResizing"
+            formControlName="allowColumnResizing"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_selectionMode" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.selectionMode"
+            >Selection Mode</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="selectionMode"
+            id="field_selectionMode"
+            data-cy="selectionMode"
+            formControlName="selectionMode"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label
+            class="form-label"
+            for="field_selectionAllowSelectAll"
+            jhiTranslate="gmoduleApp.gmoduleGridConfiguration.selectionAllowSelectAll"
+            >Selection Allow Select All</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="selectionAllowSelectAll"
+            id="field_selectionAllowSelectAll"
+            data-cy="selectionAllowSelectAll"
+            formControlName="selectionAllowSelectAll"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label
+            class="form-label"
+            for="field_selectionShowCheckBoxesMode"
+            jhiTranslate="gmoduleApp.gmoduleGridConfiguration.selectionShowCheckBoxesMode"
+            >Selection Show Check Boxes Mode</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="selectionShowCheckBoxesMode"
+            id="field_selectionShowCheckBoxesMode"
+            data-cy="selectionShowCheckBoxesMode"
+            formControlName="selectionShowCheckBoxesMode"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_editingMode" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.editingMode"
+            >Editing Mode</label
+          >
+          <input
+            type="text"
+            class="form-control"
+            name="editingMode"
+            id="field_editingMode"
+            data-cy="editingMode"
+            formControlName="editingMode"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_editingAllowAdding" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.editingAllowAdding"
+            >Editing Allow Adding</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="editingAllowAdding"
+            id="field_editingAllowAdding"
+            data-cy="editingAllowAdding"
+            formControlName="editingAllowAdding"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_editingAllowUpdating" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.editingAllowUpdating"
+            >Editing Allow Updating</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="editingAllowUpdating"
+            id="field_editingAllowUpdating"
+            data-cy="editingAllowUpdating"
+            formControlName="editingAllowUpdating"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_editingAllowDeleting" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.editingAllowDeleting"
+            >Editing Allow Deleting</label
+          >
+          <input
+            type="checkbox"
+            class="form-check"
+            name="editingAllowDeleting"
+            id="field_editingAllowDeleting"
+            data-cy="editingAllowDeleting"
+            formControlName="editingAllowDeleting"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" for="field_createdDate" jhiTranslate="gmoduleApp.gmoduleGridConfiguration.createdDate"
+            >Created Date</label
+          >
+          <div class="d-flex">
+            <input
+              id="field_createdDate"
+              data-cy="createdDate"
+              type="datetime-local"
+              class="form-control"
+              name="createdDate"
+              formControlName="createdDate"
+              placeholder="YYYY-MM-DD HH:mm"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" id="cancel-save" data-cy="entityCreateCancelButton" class="btn btn-secondary" (click)="previousState()">
+          <fa-icon icon="ban"></fa-icon>&nbsp;<span jhiTranslate="entity.action.cancel">Annuler</span>
+        </button>
+
+        <button
+          type="submit"
+          id="save-entity"
+          data-cy="entityCreateSaveButton"
+          [disabled]="editForm.invalid || isSaving"
+          class="btn btn-primary"
+        >
+          <fa-icon icon="save"></fa-icon>&nbsp;<span jhiTranslate="entity.action.save">Sauvegarder</span>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
