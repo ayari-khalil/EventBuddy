@@ -3,12 +3,12 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import HomePage from './pages/HomePage';
+import HomePage from './pages/homePage';
 import LoginPage from './pages/LoginPage';
-import SignUpPage from './pages/SignUpPage';
-import Dashboard from './pages/Dashboard';
+import SignUpPage from './pages/SignUpPage.tsx';
+import Dashboard from './pages/Dashboard.tsx';
 import ProfilePage from './pages/ProfilePage';
-import AboutUsPage from './pages/AboutUsPage';
+import AboutUsPage from './pages/AboutUsPage.tsx';
 
 function App() {
   return (
