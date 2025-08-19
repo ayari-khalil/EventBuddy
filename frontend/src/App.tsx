@@ -3,12 +3,12 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import HomePage from './pages/HomePage.tsx';
+import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
-import SignUpPage from './pages/SignUpPage.tsx';
-import Dashboard from './pages/Dashboard.tsx';
+import SignUpPage from './pages/SignUpPage';
+import Dashboard from './pages/Dashboard';
 import ProfilePage from './pages/ProfilePage';
-import AboutUsPage from './pages/AboutUsPage.tsx';
+import AboutUsPage from './pages/AboutUsPage';
 
 function App() {
   return (
@@ -17,12 +17,6 @@ function App() {
         <Header />
         <AnimatePresence mode="wait">
           <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/signup" element={<SignUpPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/about" element={<AboutUsPage />} />
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignUpPage />} />
