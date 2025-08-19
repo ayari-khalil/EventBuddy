@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
 import Footer from './components/Footer';
-import HomePage from './pages/homePage';
+import HomePage from './pages/HomePage.tsx';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage.tsx';
 import Dashboard from './pages/Dashboard.tsx';
@@ -17,6 +17,12 @@ function App() {
         <Header />
         <AnimatePresence mode="wait">
           <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignUpPage />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/about" element={<AboutUsPage />} />
             <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignUpPage />} />

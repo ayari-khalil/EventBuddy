@@ -5,10 +5,10 @@ import { User, Edit3, Mail, Calendar, MapPin, Target, Tag, Star, Save, X, Plus, 
 const ProfilePage = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [profileData, setProfileData] = useState({
-    name: "Alex Dubois",
-    email: "alex.dubois@email.com",
+    name: "Ayari khalil ",
+    email: "ayari2014khalil@gmail.com",
     bio: "Entrepreneur passionné par l'IA et les technologies émergentes. CEO & Co-fondateur de TechFlow, une startup spécialisée dans l'automatisation intelligente pour les entreprises.",
-    location: "Paris, France",
+    location: "el alia, Bizerte",
     interests: ["IA", "Blockchain", "SaaS", "Fintech", "Marketing"],
     goals: ["Trouver investisseur", "Partenariat", "Recruter talents"],
     joinDate: "Janvier 2025"
