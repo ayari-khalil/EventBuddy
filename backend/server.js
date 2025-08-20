@@ -6,6 +6,7 @@ import { createServer } from "http";
 import { Server } from "socket.io";
 import matchRoutes from "./routes/matchRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 
 
 dotenv.config();
@@ -33,6 +34,7 @@ app.use(
 );
 app.use("/api/matches", matchRoutes);
 app.use("/api/events", eventRoutes);
+app.use("/api/users", userRoutes);
 
 
 

@@ -11,41 +11,48 @@ dotenv.config();
 // --- Signup ---
 export const signupUser = async (req, res) => {
   try {
-    const { firstName, lastName, email, password, skills, interests } = req.body;
+    const { name, email, password, bio, interests, goals } = req.body;
 
+    // Vérifier si email déjà utilisé
     const existingUser = await userService.getUserByEmail(email);
-    if (existingUser) return res.status(400).json({ error: "Email déjà utilisé" });
+    if (existingUser) {
+      return res.status(400).json({ error: "Email déjà utilisé" });
+    }
 
+    // Hash du mot de passe
     const hashedPassword = await bcrypt.hash(password, 10);
-    const verificationToken = crypto.randomBytes(32).toString("hex");
 
+    // Création utilisateur
     const newUser = await userService.createUser({
-      firstName, lastName, email, password: hashedPassword,
-      skills, interests, isVerified: false, verificationToken
+      name,
+      email,
+      password: hashedPassword,
+      bio,
+      interests,
+      goals,
+      role: "USER",
+      createdAt: new Date(),
     });
 
-    // Envoi mail de vérification
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS }
+    res.status(201).json({
+      message: "Utilisateur créé avec succès",
+      user: {
+        id: newUser._id,
+        name: newUser.name,
+        email: newUser.email,
+        bio: newUser.bio,
+        interests: newUser.interests,
+        goals: newUser.goals,
+        role: newUser.role,
+      },
     });
-
-    const verificationLink = `${process.env.FRONTEND_URL}/verify/${verificationToken}`;
-
-    await transporter.sendMail({
-      from: process.env.EMAIL_USER,
-      to: email,
-      subject: "Vérification de votre compte EventBuddy",
-      html: `<p>Bonjour ${firstName}, cliquez <a href="${verificationLink}">ici</a> pour vérifier votre compte.</p>`
-    });
-
-    res.status(201).json({ message: "Utilisateur créé. Vérifiez votre email." });
 
   } catch (error) {
-    console.error(error);
+    console.error("Erreur signup:", error);
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
+
 
 // --- Login ---
 export const loginUser = async (req, res) => {

@@ -1,19 +1,74 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link,useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, Zap, ArrowRight } from 'lucide-react';
+//import ReCAPTCHA from "react-google-recaptcha";
 
-const LoginPage = () => {
+
+const LoginPage = ({ setUser }: { setUser: (user: any) => void }) => {
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const navigate = useNavigate();
+  const [rememberMe, setRememberMe] = useState(false);
+  // const [formData, setFormData] = useState({
+  //   email: '',
+  //   password: ''
+  // });
 
-  const handleSubmit = (e: React.FormEvent) => {
+const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle login logic
-    console.log('Login data:', formData);
+      console.log("Formulaire soumis ✅", { email, password });
+
+
+    // if (!recaptchaToken) {
+    //   alert("Veuillez valider le reCAPTCHA avant de continuer.");
+    //   return;
+    // }
+
+    setLoading(true);
+
+    console.log("Envoi requête vers API…");
+
+
+    fetch("http://localhost:5000/api/users/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password, recaptchaToken }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setLoading(false);
+
+        if (data.message === "Connexion réussie") {
+          // Stocker l'utilisateur dans le localStorage
+          if (rememberMe) {
+            localStorage.setItem('user', JSON.stringify(data.user));
+          } else {
+            sessionStorage.setItem('user', JSON.stringify(data.user));
+          }
+          setUser(data.user);
+           // Rediriger vers la page en fonction du rôle
+        if (data.user.role === 'admin') {
+          navigate('/admindashboard', { replace: true });  // Redirigez vers le tableau de bord admin
+        } else {
+          navigate('/profile1', { replace: true });  // Redirigez vers le profil de l'utilisateur
+        }
+          
+        } else {
+          setErrorMessage(data.message || "Échec de la connexion");
+        }
+      })
+      .catch((err) => {
+        setLoading(false);
+        console.error("Erreur:", err);
+        setErrorMessage("Une erreur est survenue. Veuillez réessayer.");
+      });
   };
 
   return (
@@ -79,12 +134,14 @@ const LoginPage = () => {
               <div className="relative">
                 <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
+                  id="email"
+                  name="email"
                   type="email"
                   required
                   className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-gray-400 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all duration-300"
                   placeholder="votre@email.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
             </div>
@@ -96,12 +153,14 @@ const LoginPage = () => {
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                 <input
+                  id="password"
+                  name="password"
                   type={showPassword ? 'text' : 'password'}
                   required
                   className="w-full pl-12 pr-12 py-4 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-gray-400 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all duration-300"
                   placeholder="Votre mot de passe"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                 />
                 <button
                   type="button"
@@ -115,8 +174,11 @@ const LoginPage = () => {
 
             <div className="flex items-center justify-between">
               <label className="flex items-center">
-                <input
-                  type="checkbox"
+              <input
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(e) => setRememberMe(e.target.checked)}
+
                   className="w-4 h-4 rounded border-gray-600 text-blue-500 bg-transparent focus:ring-blue-500/20"
                 />
                 <span className="ml-2 text-sm text-gray-400">Se souvenir de moi</span>
