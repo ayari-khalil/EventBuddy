@@ -61,7 +61,7 @@ export const loginUser = async (req, res) => {
     const user = await userService.getUserByEmail(email);
     if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
 
-    if (!user.isVerified) return res.status(400).json({ error: "Compte non vérifié" });
+    //if (!user.isVerified) return res.status(400).json({ error: "Compte non vérifié" });
 
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) return res.status(400).json({ error: "Mot de passe incorrect" });
