@@ -6,6 +6,15 @@ import { User, Mail, Lock, Eye, EyeOff, FileText, Target, Tag, ArrowRight, Plus,
 const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+    const [notification, setNotification] = useState<{
+    show: boolean;
+    type: 'success' | 'error';
+    message: string;
+  }>({
+    show: false,
+    type: 'success',
+    message: '',
+  });
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -55,10 +64,67 @@ const SignUpPage = () => {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('SignUp data:', formData);
-  };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  // Vérifier que tous les champs obligatoires sont remplis
+  if (!formData.name || !formData.email || !formData.password) {
+    setNotification({
+      show: true,
+      type: "error",
+      message: "Veuillez remplir tous les champs obligatoires.",
+    });
+    return;
+  }
+
+  try {
+    const response = await fetch("http://localhost:5000/api/users/signup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(formData), // On envoie directement les données JSON
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setNotification({
+        show: true,
+        type: "error",
+        message: result.error || "Erreur lors de l'inscription.",
+      });
+      return;
+    }
+
+    // Succès
+    setNotification({
+      show: true,
+      type: "success",
+      message:
+        "Inscription réussie ! Un email de vérification a été envoyé à votre adresse email.",
+    });
+
+    // Réinitialiser le formulaire après un court délai
+    setTimeout(() => {
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        bio: "",
+        interests: [],
+        goals: [],
+      });
+    }, 2000);
+  } catch (error) {
+    console.error("Erreur lors de l'inscription :", error);
+    setNotification({
+      show: true,
+      type: "error",
+      message: "Une erreur est survenue. Veuillez réessayer.",
+    });
+  }
+};
 
   const nextStep = () => {
     if (currentStep < 3) setCurrentStep(currentStep + 1);
