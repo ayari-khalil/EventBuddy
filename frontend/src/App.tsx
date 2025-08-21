@@ -9,6 +9,12 @@ import SignUpPage from './pages/SignUpPage';
 import Dashboard from './pages/Dashboard';
 import ProfilePage from './pages/ProfilePage';
 import AboutUsPage from './pages/AboutUsPage';
+import EventsHub from './pages/EventsHub';
+import AIMatching from './pages/AIMatching';
+import MessagesPage from './pages/MessagesPage';
+import MyEvents from './pages/MyEvents';
+import Analytics from './pages/Analytics';
+import Settings from './pages/Settings';
 
 function App() {
   return (
@@ -23,6 +29,12 @@ function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/about" element={<AboutUsPage />} />
+            <Route path="/events" element={<EventsHub />} />
+            <Route path="/matching" element={<AIMatching />} />
+            <Route path="/messages" element={<MessagesPage />} />
+            <Route path="/my-events" element={<MyEvents />} />
+            <Route path="/analytics" element={<Analytics />} />
+            <Route path="/settings" element={<Settings />} />
           </Routes>
         </AnimatePresence>
         <Footer />
