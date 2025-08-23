@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, MapPin, Users, Clock, Star, Filter, Search, Heart, Zap, Target, ArrowRight, Eye, UserPlus, Sparkles } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, Star, Filter, Search, Heart, Zap, Target, ArrowRight, Brain, UserPlus, Sparkles } from 'lucide-react';
 
 const EventsHub = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
