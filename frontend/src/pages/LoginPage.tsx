@@ -35,41 +35,47 @@ const handleSubmit = (e: React.FormEvent) => {
 
 
     fetch("http://localhost:5000/api/users/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password, recaptchaToken }),
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setLoading(false);
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ email, password }),
+})
+  .then(async (res) => {
+    const data = await res.json();
+    console.log("Réponse API:", data);
 
-        if (data.message === "Connexion réussie") {
-          // Stocker l'utilisateur dans le localStorage
-          if (rememberMe) {
-            localStorage.setItem('user', JSON.stringify(data.user));
-          } else {
-            sessionStorage.setItem('user', JSON.stringify(data.user));
-          }
-          setUser(data.user);
-           // Rediriger vers la page en fonction du rôle
-        if (data.user.role === 'admin') {
-          navigate('/admindashboard', { replace: true });  // Redirigez vers le tableau de bord admin
-        } else {
-          navigate('/profile1', { replace: true });  // Redirigez vers le profil de l'utilisateur
-        }
-          
-        } else {
-          setErrorMessage(data.message || "Échec de la connexion");
-        }
-      })
-      .catch((err) => {
-        setLoading(false);
-        console.error("Erreur:", err);
-        setErrorMessage("Une erreur est survenue. Veuillez réessayer.");
-      });
-  };
+    setLoading(false);
+
+    if (data.user && data.token) {
+      // ✅ Sauvegarde utilisateur
+      if (rememberMe) {
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("token", data.token);
+      } else {
+        sessionStorage.setItem("user", JSON.stringify(data.user));
+        sessionStorage.setItem("token", data.token);
+      }
+
+      setUser(data.user);
+
+      // ✅ Navigation selon rôle
+      if (data.user.role === "admin") {
+        navigate("/admindashboard", { replace: true });
+      } else {
+        navigate("/profile", { replace: true });
+      }
+    } else {
+      setErrorMessage(data.error || "Échec de la connexion");
+    }
+  })
+  .catch((err) => {
+    setLoading(false);
+    console.error("Erreur:", err);
+    setErrorMessage("Une erreur est survenue. Veuillez réessayer.");
+  });
+
+  }
 
   return (
     <motion.div

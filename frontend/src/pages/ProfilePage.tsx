@@ -1,18 +1,51 @@
-import React, { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { User, Edit3, Mail, Calendar, MapPin, Target, Tag, Star, Save, X, Plus, Camera, Award, TrendingUp } from 'lucide-react';
 
 const ProfilePage = () => {
+
   const [isEditing, setIsEditing] = useState(false);
+ const [user, setUser] = useState<any | null>(null);
+
   const [profileData, setProfileData] = useState({
-    name: "Alex Dubois",
-    email: "alex.dubois@email.com",
-    bio: "Entrepreneur passionné par l'IA et les technologies émergentes. CEO & Co-fondateur de TechFlow, une startup spécialisée dans l'automatisation intelligente pour les entreprises.",
-    location: "Paris, France",
-    interests: ["IA", "Blockchain", "SaaS", "Fintech", "Marketing"],
-    goals: ["Trouver investisseur", "Partenariat", "Recruter talents"],
-    joinDate: "Janvier 2025"
+    name: "",
+    email: "",
+    bio: "",
+    location: "",
+    interests: [] as string[],
+    goals: [] as string[],
+    joinDate: ""
   });
+
+
+useEffect(() => {
+    const storedUser =
+      localStorage.getItem("user") || sessionStorage.getItem("user");
+    if (storedUser) {
+      try {
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+
+        // Remplir profileData avec les infos du backend
+        setProfileData({
+          name: parsedUser.name || "Nom inconnu",
+          email: parsedUser.email || "Email non renseigné",
+          bio: parsedUser.bio || "Aucune bio disponible",
+          location: parsedUser.location || "Non spécifié",
+          interests: parsedUser.interests || [],
+          goals: parsedUser.goals || [],
+          joinDate: new Date(parsedUser.createdAt).toLocaleDateString("fr-FR", {
+            month: "long",
+            year: "numeric",
+          }),
+        });
+      } catch (error) {
+        console.error("Erreur lors du parsing des données utilisateur :", error);
+        localStorage.removeItem("user");
+        sessionStorage.removeItem("user");
+      }
+    }
+  }, []);
 
   const [newInterest, setNewInterest] = useState('');
   const [newGoal, setNewGoal] = useState('');

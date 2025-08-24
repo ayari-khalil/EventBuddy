@@ -1,5 +1,6 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
 import Footer from './components/Footer';
@@ -17,6 +18,19 @@ import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 
 function App() {
+    const [user, setUser] = useState<any>(null);
+  //   const navigate = useNavigate();
+
+
+
+  //     const handleLogout = () => {
+  //   localStorage.removeItem("user");
+  //   sessionStorage.removeItem("user");
+  //   setUser(null);
+  //   navigate("/login");
+  // };
+
+
   return (
     <Router>
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
@@ -24,7 +38,7 @@ function App() {
         <AnimatePresence mode="wait">
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/login" element={<LoginPage setUser={setUser} />} />
             <Route path="/signup" element={<SignUpPage />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/profile" element={<ProfilePage />} />
