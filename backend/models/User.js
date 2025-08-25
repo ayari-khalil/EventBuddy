@@ -8,6 +8,9 @@ const userSchema = new mongoose.Schema({
   interests: [{ type: String }], // ex: "AI", "Blockchain"
   goals: [{ type: String }],     // ex: "Trouver investisseur"
   role: { type: String, enum: ["USER", "ADMIN"], default: "USER" },
+  matches: { type: User, required: true },
+
+
   createdAt: { type: Date, default: Date.now }
 });
 
