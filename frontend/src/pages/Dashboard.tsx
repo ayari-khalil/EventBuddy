@@ -15,6 +15,15 @@ const Dashboard = () => {
       matches: 12,
       image: "https://images.pexels.com/photos/2747449/pexels-photo-2747449.jpeg?auto=compress&cs=tinysrgb&w=400"
     },
+        {
+      id: 11,
+      name: "Tech Innovation Summit 2025",
+      date: "15 Mars 2025",
+      location: "Paris, France",
+      attendees: 250,
+      matches: 12,
+      image: "https://images.pexels.com/photos/2747449/pexels-photo-2747449.jpeg?auto=compress&cs=tinysrgb&w=400"
+    },
     {
       id: 2,
       name: "AI & Future Work Conference",

@@ -14,6 +14,13 @@ const EventsHub = () => {
     { id: 'startup', name: 'Startup', icon: Heart },
     { id: 'ai', name: 'IA', icon: Brain }
   ];
+    const matches = [
+    { id: 'all', name: 'Tous', icon: Sparkles },
+    { id: 'tech', name: 'Tech', icon: Zap },
+    { id: 'business', name: 'Business', icon: Target },
+    { id: 'startup', name: 'Startup', icon: Heart },
+    { id: 'ai', name: 'IA', icon: Brain }
+  ];
 
   const events = [
     {
