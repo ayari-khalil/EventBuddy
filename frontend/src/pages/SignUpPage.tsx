@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate  } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Lock, Eye, EyeOff, FileText, Target, Tag, ArrowRight, Plus, X } from 'lucide-react';
 
@@ -64,6 +64,8 @@ const SignUpPage = () => {
     }
   };
 
+const navigate = useNavigate();
+
 const handleSubmit = async (e: React.FormEvent) => {
   e.preventDefault();
 
@@ -80,10 +82,8 @@ const handleSubmit = async (e: React.FormEvent) => {
   try {
     const response = await fetch("http://localhost:5000/api/users/signup", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(formData), // On envoie directement les données JSON
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(formData),
     });
 
     const result = await response.json();
@@ -97,13 +97,36 @@ const handleSubmit = async (e: React.FormEvent) => {
       return;
     }
 
-    // Succès
+    // ✅ Succès : Afficher le popup
     setNotification({
       show: true,
       type: "success",
-      message:
-        "Inscription réussie ! Un email de vérification a été envoyé à votre adresse email.",
+      message: "Inscription réussie ! Vous allez être redirigé vers la page de connexion.",
     });
+
+    // ✅ Redirection après 2 secondes
+    setTimeout(() => {
+      navigate("/login"); 
+    }, 2000);
+
+  } catch (error) {
+    console.error("Erreur signup :", error);
+    setNotification({
+      show: true,
+      type: "error",
+      message: "Une erreur est survenue. Veuillez réessayer.",
+    });
+  }
+};
+
+
+    // Succès
+    // setNotification({
+    //   show: true,
+    //   type: "success",
+    //   message:
+    //     "Inscription réussie ! Un email de vérification a été envoyé à votre adresse email.",
+    // });
 
     // Réinitialiser le formulaire après un court délai
     setTimeout(() => {
