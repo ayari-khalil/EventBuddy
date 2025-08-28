@@ -66,7 +66,8 @@ const SignUpPage = () => {
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
 
     // Vérifier que tous les champs obligatoires sont remplis
@@ -141,19 +142,56 @@ const SignUpPage = () => {
     }
   };
 
-  const nextStep = () => {
-    if (currentStep < 3) setCurrentStep(currentStep + 1);
-  };
+const nextStep = () => {
+  console.log("===== nextStep appelé =====");
+  console.log("Étape actuelle :", currentStep);
+  console.log("Peut-on passer à l'étape suivante ?", canProceed());
 
-  const prevStep = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1);
-  };
+  if (canProceed()) {
+    if (currentStep < 5) {
+      setCurrentStep(currentStep + 1);
+      console.log("→ Passage à l'étape :", currentStep + 1);
+    } else if (currentStep === 5) {
+      console.log("→ Dernière étape atteinte, soumission du formulaire");
+      handleSubmit({ preventDefault: () => {} } as React.FormEvent); // ici tu devras peut-être passer un e simulé si nécessaire
+    }
+  } else {
+    console.log("→ Impossible de passer à l'étape suivante, champs manquants");
+    setNotification({
+      show: true,
+      type: "error",
+      message: "Veuillez compléter tous les champs obligatoires de cette étape.",
+    });
+    setTimeout(() => {
+      setNotification(prev => ({ ...prev, show: false }));
+    }, 3000);
+  }
+};
 
-  const canProceed = () => {
-    if (currentStep === 1) return formData.name && formData.email && formData.password;
-    if (currentStep === 2) return formData.bio.length > 0;
-    return true;
-  };
+const prevStep = () => {
+  console.log("← prevStep appelé. Étape actuelle :", currentStep);
+  if (currentStep > 1) {
+    setCurrentStep(currentStep - 1);
+    console.log("← Retour à l'étape :", currentStep - 1);
+  }
+};
+
+const canProceed = () => {
+  console.log("🔍 Vérification des champs pour l'étape", currentStep);
+  if (currentStep === 1) {
+    return formData.name.trim() !== "" && formData.email.trim() !== "" && formData.password.trim() !== "";
+  }
+  if (currentStep === 2) {
+    return formData.bio.trim().length > 0;
+  }
+  if (currentStep === 3) {
+    return formData.interests.length > 0;
+  }
+  if (currentStep === 4) {
+    return formData.goals.length > 0;
+  }
+  return true;
+};
 
 
   return (
