@@ -21,5 +21,11 @@ router.post("/reset-password/:token", resetPassword);
 router.get("/:id", getUserById);
 router.put("/:id", updateUser);
 //router.put("/:id/upload", upload.single("profileImage"), uploadProfileImage);
+router.post("/add-interest", userController.addInterest);
+router.post("/remove-interest", userController.removeInterest);
+
+// Goals
+router.post("/add-goal", userController.addGoal);
+router.post("/remove-goal", userController.removeGoal);
 
 export default router;

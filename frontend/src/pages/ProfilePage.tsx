@@ -8,13 +8,14 @@ const ProfilePage = () => {
  const [user, setUser] = useState<any | null>(null);
 
   const [profileData, setProfileData] = useState({
+    _id: "",
     name: "",
     email: "",
     bio: "",
     location: "",
     interests: [] as string[],
     goals: [] as string[],
-    joinDate: ""
+    joinDate: "",
     matches: ""
 
   });
@@ -31,6 +32,7 @@ useEffect(() => {
 
         // Remplir profileData avec les infos du backend
         setProfileData({
+          _id: parsedUser._id || "",
           name: parsedUser.name || "Nom inconnu",
           email: parsedUser.email || "Email non renseigné",
           bio: parsedUser.bio || "Aucune bio disponible",
@@ -82,21 +84,40 @@ useEffect(() => {
     }
   ];
 
-  const addInterest = (interest: string) => {
-    if (interest && !profileData.interests.includes(interest)) {
-      setProfileData({
-        ...profileData,
-        interests: [...profileData.interests, interest]
-      });
-    }
-  };
+const addInterest = async (interest: string) => {
+  if (!interest || profileData.interests.includes(interest)) return;
 
-  const removeInterest = (interest: string) => {
-    setProfileData({
-      ...profileData,
-      interests: profileData.interests.filter(i => i !== interest)
+  try {
+    const response = await fetch("http://localhost:5000/api/users/add-interest", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: user?.id, interest }),
     });
-  };
+
+    const updatedUser = await response.json();
+    setProfileData(updatedUser);
+  } catch (err) {
+    console.error("Erreur lors de l'ajout de l'intérêt :", err);
+  }
+};
+
+  const removeInterest = async (userId: string, interest: string) => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/users/${userId}/removeInterest`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ interest }),
+    });
+
+    if (!response.ok) throw new Error("Erreur lors de la suppression de l’intérêt");
+
+    const updatedUser = await response.json();
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    return updatedUser;
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   const addGoal = (goal: string) => {
     if (goal && !profileData.goals.includes(goal)) {
@@ -287,7 +308,7 @@ useEffect(() => {
                     <span className="text-blue-300">{interest}</span>
                     {isEditing && (
                       <button
-                        onClick={() => removeInterest(interest)}
+                        onClick={() => removeInterest(profileData._id,interest)}
                         className="text-blue-400 hover:text-red-400 transition-colors duration-300"
                       >
                         <X className="w-3 h-3" />

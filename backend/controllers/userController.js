@@ -186,3 +186,69 @@ export const uploadProfileImage = async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
+exports.addInterest = async (req, res) => {
+  try {
+    const { userId, interest } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { interests: interest } }, // évite les doublons
+      { new: true }
+    );
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de l'ajout de l'intérêt." });
+  }
+};
+
+// ✅ Supprimer un intérêt
+exports.removeInterest = async (req, res) => {
+  try {
+    const { userId, interest } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { interests: interest } },
+      { new: true }
+    );
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la suppression de l'intérêt." });
+  }
+};
+
+// ✅ Ajouter un objectif
+exports.addGoal = async (req, res) => {
+  try {
+    const { userId, goal } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $addToSet: { goals: goal } },
+      { new: true }
+    );
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de l'ajout de l'objectif." });
+  }
+};
+
+// ✅ Supprimer un objectif
+exports.removeGoal = async (req, res) => {
+  try {
+    const { userId, goal } = req.body;
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { $pull: { goals: goal } },
+      { new: true }
+    );
+
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: "Erreur lors de la suppression de l'objectif." });
+  }
+};
