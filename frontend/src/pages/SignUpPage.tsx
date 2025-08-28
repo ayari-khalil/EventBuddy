@@ -1,19 +1,20 @@
 import React, { useState } from 'react';
-import { Link, useNavigate  } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Mail, Lock, Eye, EyeOff, FileText, Target, Tag, ArrowRight, Plus, X } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, FileText, Target, Tag, ArrowRight, Plus, X, CheckCircle, AlertCircle } from 'lucide-react';
 
 const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-    const [notification, setNotification] = useState<{
+  const [isLoading, setIsLoading] = useState(false);
+  const [notification, setNotification] = useState<{
     show: boolean;
     type: 'success' | 'error';
     message: string;
   }>({
     show: false,
     type: 'success',
-    message: '',
+    message: ''
   });
   const [formData, setFormData] = useState({
     name: '',
@@ -26,6 +27,7 @@ const SignUpPage = () => {
 
   const [newInterest, setNewInterest] = useState('');
   const [newGoal, setNewGoal] = useState('');
+  const navigate = useNavigate();
 
   const suggestedInterests = ['IA', 'Blockchain', 'Fintech', 'SaaS', 'E-commerce', 'Marketing', 'Design', 'Dev'];
   const suggestedGoals = ['Trouver investisseur', 'Recruter talents', 'Partenariat', 'Mentorship', 'Clients', 'Co-fondateur'];
@@ -64,90 +66,80 @@ const SignUpPage = () => {
     }
   };
 
-const navigate = useNavigate();
+  const handleSubmit = async () => {
+    setIsLoading(true);
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-
-  // Vérifier que tous les champs obligatoires sont remplis
-  if (!formData.name || !formData.email || !formData.password) {
-    setNotification({
-      show: true,
-      type: "error",
-      message: "Veuillez remplir tous les champs obligatoires.",
-    });
-    return;
-  }
-
-  try {
-    const response = await fetch("http://localhost:5000/api/users/signup", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
+    // Vérifier que tous les champs obligatoires sont remplis
+    if (!formData.name || !formData.email || !formData.password) {
       setNotification({
         show: true,
         type: "error",
-        message: result.error || "Erreur lors de l'inscription.",
+        message: "Veuillez remplir tous les champs obligatoires.",
       });
+      setIsLoading(false);
+      
+      // Auto-hide notification après 5 secondes
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, show: false }));
+      }, 5000);
       return;
     }
 
-    // ✅ Succès : Afficher le popup
-    setNotification({
-      show: true,
-      type: "success",
-      message: "Inscription réussie ! Vous allez être redirigé vers la page de connexion.",
-    });
-
-    // ✅ Redirection après 2 secondes
-    setTimeout(() => {
-      navigate("/login"); 
-    }, 2000);
-
-  } catch (error) {
-    console.error("Erreur signup :", error);
-    setNotification({
-      show: true,
-      type: "error",
-      message: "Une erreur est survenue. Veuillez réessayer.",
-    });
-  }
-};
-
-
-    // Succès
-    // setNotification({
-    //   show: true,
-    //   type: "success",
-    //   message:
-    //     "Inscription réussie ! Un email de vérification a été envoyé à votre adresse email.",
-    // });
-
-    // Réinitialiser le formulaire après un court délai
-    setTimeout(() => {
-      setFormData({
-        name: "",
-        email: "",
-        password: "",
-        bio: "",
-        interests: [],
-        goals: [],
+    try {
+      const response = await fetch("http://localhost:5000/api/users/signup", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
-    }, 2000);
-  } catch (error) {
-    console.error("Erreur lors de l'inscription :", error);
-    setNotification({
-      show: true,
-      type: "error",
-      message: "Une erreur est survenue. Veuillez réessayer.",
-    });
-  }
-};
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setNotification({
+          show: true,
+          type: "error",
+          message: result.error || "Erreur lors de l'inscription.",
+        });
+        setIsLoading(false);
+        
+        // Auto-hide notification après 5 secondes
+        setTimeout(() => {
+          setNotification(prev => ({ ...prev, show: false }));
+        }, 5000);
+        return;
+      }
+
+      // ✅ Succès : Afficher le popup
+      setNotification({
+        show: true,
+        type: "success",
+        message: "Inscription réussie ! Vous allez être redirigé vers la page de connexion.",
+      });
+
+      setIsLoading(false);
+      
+      // ✅ Redirection après 2 secondes
+      setTimeout(() => {
+        navigate("/login"); 
+      }, 2500);
+
+    } catch (error) {
+      console.error("Erreur signup :", error);
+      setNotification({
+        show: true,
+        type: "error",
+        message: "Une erreur est survenue. Veuillez réessayer.",
+      });
+      setIsLoading(false);
+      
+      // Auto-hide notification après 5 secondes
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, show: false }));
+      }, 5000);
+    }
+  };
 
   const nextStep = () => {
     if (currentStep < 3) setCurrentStep(currentStep + 1);
@@ -163,6 +155,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     return true;
   };
 
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -170,6 +163,39 @@ const handleSubmit = async (e: React.FormEvent) => {
       exit={{ opacity: 0 }}
       className="min-h-screen flex items-center justify-center pt-20 pb-12 px-4"
     >
+      {/* Notification Toast */}
+      <AnimatePresence>
+        {notification.show && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.9 }}
+            className="fixed top-24 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4"
+          >
+            <div className={`p-4 rounded-2xl backdrop-blur-xl border shadow-2xl ${
+              notification.type === 'success' 
+                ? 'bg-green-500/10 border-green-500/30 text-green-300' 
+                : 'bg-red-500/10 border-red-500/30 text-red-300'
+            }`}>
+              <div className="flex items-center space-x-3">
+                {notification.type === 'success' ? (
+                  <CheckCircle className="w-6 h-6 text-green-400 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="w-6 h-6 text-red-400 flex-shrink-0" />
+                )}
+                <p className="text-sm font-medium">{notification.message}</p>
+                <button
+                  onClick={() => setNotification(prev => ({ ...prev, show: false }))}
+                  className="ml-auto text-gray-400 hover:text-white transition-colors duration-300"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Progress bar */}
       <div className="fixed top-24 left-1/2 transform -translate-x-1/2 w-full max-w-md px-4 z-20">
         <div className="bg-white/5 backdrop-blur-xl rounded-full p-1">
@@ -483,10 +509,20 @@ const handleSubmit = async (e: React.FormEvent) => {
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-xl hover:from-green-600 hover:to-blue-700 transition-all duration-300 flex items-center"
+                  disabled={isLoading}
+                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-xl hover:from-green-600 hover:to-blue-700 transition-all duration-300 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Créer mon compte
-                  <ArrowRight className="ml-2 w-4 h-4" />
+                  {isLoading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
+                      Création en cours...
+                    </>
+                  ) : (
+                    <>
+                      Créer mon compte
+                      <ArrowRight className="ml-2 w-4 h-4" />
+                    </>
+                  )}
                 </motion.button>
               )}
             </div>
