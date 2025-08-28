@@ -15,12 +15,15 @@ const ProfilePage = () => {
     interests: [] as string[],
     goals: [] as string[],
     joinDate: ""
+    matches: ""
+
   });
 
 
 useEffect(() => {
     const storedUser =
       localStorage.getItem("user") || sessionStorage.getItem("user");
+      console.log("→ Données utilisateur récupérées :", storedUser);
     if (storedUser) {
       try {
         const parsedUser = JSON.parse(storedUser);
@@ -38,6 +41,7 @@ useEffect(() => {
             month: "long",
             year: "numeric",
           }),
+          matches: parsedUser.matches || "aucun match"
         });
       } catch (error) {
         console.error("Erreur lors du parsing des données utilisateur :", error);
