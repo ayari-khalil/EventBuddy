@@ -1,5 +1,5 @@
 import express from "express";
-import { signupUser, loginUser, verifyEmail, forgotPassword, resetPassword, getUserById, updateUser, uploadProfileImage } from "../controllers/userController.js";
+import { signupUser, loginUser, verifyEmail, forgotPassword, resetPassword, getUserById, updateUser, uploadProfileImage, addInterest, removeGoal, addGoal, removeInterest } from "../controllers/userController.js";
 // import multer from "multer";
 
 const router = express.Router();
@@ -21,11 +21,11 @@ router.post("/reset-password/:token", resetPassword);
 router.get("/:id", getUserById);
 router.put("/:id", updateUser);
 //router.put("/:id/upload", upload.single("profileImage"), uploadProfileImage);
-router.post("/add-interest", userController.addInterest);
-router.post("/remove-interest", userController.removeInterest);
+router.post("/add-interest", addInterest);
+router.post("/remove-interest", removeInterest);
 
 // Goals
-router.post("/add-goal", userController.addGoal);
-router.post("/remove-goal", userController.removeGoal);
+router.post("/add-goal", addGoal);
+router.post("/remove-goal", removeGoal);
 
 export default router;

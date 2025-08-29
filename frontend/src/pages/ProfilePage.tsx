@@ -16,7 +16,7 @@ const ProfilePage = () => {
     interests: [] as string[],
     goals: [] as string[],
     joinDate: "",
-    matches: ""
+    matches: [] as string[],
 
   });
 
@@ -43,7 +43,7 @@ useEffect(() => {
             month: "long",
             year: "numeric",
           }),
-          matches: parsedUser.matches || "aucun match"
+        matches: parsedUser.matches || [],
         });
       } catch (error) {
         console.error("Erreur lors du parsing des données utilisateur :", error);
@@ -84,32 +84,23 @@ useEffect(() => {
     }
   ];
 
-const addInterest = async (interest: string) => {
-  if (!interest || profileData.interests.includes(interest)) return;
+const addInterest = (interest: string) => { if (interest && !profileData.interests.includes(interest)) { setProfileData({ ...profileData, interests: [...profileData.interests, interest] }); } };
 
+const removeInterest = (interest: string) => {
+   setProfileData({
+     ...profileData,
+      interests: profileData.interests.filter(i => i !== interest)
+     }); };
+
+  const addGoal = async (userId: string, goal: string) => {
   try {
-    const response = await fetch("http://localhost:5000/api/users/add-interest", {
+    const response = await fetch(`http://localhost:5000/api/users/${userId}/addGoal`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId: user?.id, interest }),
+      body: JSON.stringify({ goal }),
     });
 
-    const updatedUser = await response.json();
-    setProfileData(updatedUser);
-  } catch (err) {
-    console.error("Erreur lors de l'ajout de l'intérêt :", err);
-  }
-};
-
-  const removeInterest = async (userId: string, interest: string) => {
-  try {
-    const response = await fetch(`http://localhost:5000/api/users/${userId}/removeInterest`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ interest }),
-    });
-
-    if (!response.ok) throw new Error("Erreur lors de la suppression de l’intérêt");
+    if (!response.ok) throw new Error("Erreur lors de l’ajout de l’objectif");
 
     const updatedUser = await response.json();
     localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -119,21 +110,23 @@ const addInterest = async (interest: string) => {
   }
 };
 
-  const addGoal = (goal: string) => {
-    if (goal && !profileData.goals.includes(goal)) {
-      setProfileData({
-        ...profileData,
-        goals: [...profileData.goals, goal]
-      });
-    }
-  };
-
-  const removeGoal = (goal: string) => {
-    setProfileData({
-      ...profileData,
-      goals: profileData.goals.filter(g => g !== goal)
+  const removeGoal = async (userId: string, goal: string) => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/users/${userId}/removeGoal`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ goal }),
     });
-  };
+
+    if (!response.ok) throw new Error("Erreur lors de la suppression de l’objectif");
+
+    const updatedUser = await response.json();
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+    return updatedUser;
+  } catch (error) {
+    console.error(error);
+  }
+};
 
   const addCustomInterest = () => {
     if (newInterest.trim()) {
@@ -144,16 +137,36 @@ const addInterest = async (interest: string) => {
 
   const addCustomGoal = () => {
     if (newGoal.trim()) {
-      addGoal(newGoal.trim());
+      addGoal(profileData._id,newGoal.trim());
       setNewGoal('');
     }
   };
 
-  const saveProfile = () => {
+const saveProfile = async () => {
+  try {
+    const response = await fetch(`http://localhost:5000/api/users/${profileData._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(profileData),
+    });
+
+    const data = await response.json();
+    console.log("Profil mis à jour :", data);
+
+    if (data.user) {
+      // 🔹 Mettre à jour le state avec le user retourné
+      setProfileData(data.user);
+      // 🔹 Mettre à jour le localStorage/sessionStorage
+      localStorage.setItem("user", JSON.stringify(data.user));
+      sessionStorage.setItem("user", JSON.stringify(data.user));
+    }
+
     setIsEditing(false);
-    // Here you would typically save to a backend
-    console.log('Saving profile:', profileData);
-  };
+  } catch (error) {
+    console.error("Erreur lors de la mise à jour :", error);
+  }
+};
+
 
   return (
     <motion.div
@@ -300,23 +313,27 @@ const addInterest = async (interest: string) => {
               </h2>
 
               <div className="flex flex-wrap gap-2 mb-4">
-                {profileData.interests.map((interest) => (
-                  <div
-                    key={interest}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-blue-500/30 rounded-full"
-                  >
-                    <span className="text-blue-300">{interest}</span>
-                    {isEditing && (
-                      <button
-                        onClick={() => removeInterest(profileData._id,interest)}
-                        className="text-blue-400 hover:text-red-400 transition-colors duration-300"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
+  {profileData.interests && profileData.interests.length > 0 ? (
+    profileData.interests.map((interest) => (
+      <div
+        key={interest}
+        className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-500/20 to-purple-500/20 backdrop-blur-sm border border-blue-500/30 rounded-full"
+      >
+        <span className="text-blue-300">{interest}</span>
+        {isEditing && (
+          <button
+            onClick={() => removeInterest(profileData._id, interest)}
+            className="text-blue-400 hover:text-red-400 transition-colors duration-300"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        )}
+      </div>
+    ))
+  ) : (
+    <p className="text-gray-400 italic">Aucun intérêt renseigné</p>
+  )}
+</div>
 
               {isEditing && (
                 <div className="flex space-x-2">
@@ -351,24 +368,23 @@ const addInterest = async (interest: string) => {
               </h2>
 
               <div className="flex flex-wrap gap-2 mb-4">
-                {profileData.goals.map((goal) => (
-                  <div
-                    key={goal}
-                    className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-pink-500/20 to-orange-500/20 backdrop-blur-sm border border-pink-500/30 rounded-full"
-                  >
-                    <span className="text-pink-300">{goal}</span>
-                    {isEditing && (
-                      <button
-                        onClick={() => removeGoal(goal)}
-                        className="text-pink-400 hover:text-red-400 transition-colors duration-300"
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-
+  {(profileData.goals ?? []).map((goal) => (
+    <div
+      key={goal}
+      className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-pink-500/20 to-orange-500/20 backdrop-blur-sm border border-pink-500/30 rounded-full"
+    >
+      <span className="text-pink-300">{goal}</span>
+      {isEditing && (
+        <button
+          onClick={() => removeGoal(profileData._id, goal)}
+          className="text-pink-400 hover:text-red-400 transition-colors duration-300"
+        >
+          <X className="w-3 h-3" />
+        </button>
+      )}
+    </div>
+  ))}
+</div> 
               {isEditing && (
                 <div className="flex space-x-2">
                   <input

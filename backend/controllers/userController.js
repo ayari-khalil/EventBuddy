@@ -186,7 +186,7 @@ export const uploadProfileImage = async (req, res) => {
     res.status(500).json({ error: "Erreur serveur" });
   }
 };
-exports.addInterest = async (req, res) => {
+export const addInterest = async (req, res) => {
   try {
     const { userId, interest } = req.body;
 
@@ -203,7 +203,7 @@ exports.addInterest = async (req, res) => {
 };
 
 // ✅ Supprimer un intérêt
-exports.removeInterest = async (req, res) => {
+export const removeInterest = async (req, res) => {
   try {
     const { userId, interest } = req.body;
 
@@ -220,7 +220,7 @@ exports.removeInterest = async (req, res) => {
 };
 
 // ✅ Ajouter un objectif
-exports.addGoal = async (req, res) => {
+export const addGoal = async (req, res) => {
   try {
     const { userId, goal } = req.body;
 
@@ -237,7 +237,7 @@ exports.addGoal = async (req, res) => {
 };
 
 // ✅ Supprimer un objectif
-exports.removeGoal = async (req, res) => {
+export const removeGoal = async (req, res) => {
   try {
     const { userId, goal } = req.body;
 

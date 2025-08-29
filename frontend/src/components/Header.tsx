@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Menu, X, Zap, Users, Brain } from 'lucide-react';
+import { Menu, X, Zap, Users, Brain, LogOut } from 'lucide-react';
 
-const Header = () => {
+const Header = ({ currentUser, setCurrentUser }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navigation = [
     { name: 'Accueil', href: '/', icon: Zap },
     { name: 'Dashboard', href: '/dashboard', icon: Brain },
     { name: 'À propos', href: '/about', icon: Users },
   ];
+
+  const handleLogout = () => {
+    // Supprime token ou infos utilisateur stockées (localStorage/sessionStorage)
+    localStorage.removeItem('token');
+    setCurrentUser(null);
+    navigate('/login');
+  };
 
   return (
     <motion.header 
@@ -51,18 +59,29 @@ const Header = () => {
           </nav>
 
           <div className="hidden md:flex space-x-4">
-            <Link
-              to="/login"
-              className="px-6 py-2 text-gray-300 hover:text-white transition-colors duration-300"
-            >
-              Connexion
-            </Link>
-            <Link
-              to="/signup"
-              className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
-            >
-              Inscription
-            </Link>
+            {currentUser ? (
+              <button
+                onClick={handleLogout}
+                className="flex items-center px-6 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all duration-300"
+              >
+                <LogOut className="w-4 h-4 mr-2" /> Logout
+              </button>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="px-6 py-2 text-gray-300 hover:text-white transition-colors duration-300"
+                >
+                  Connexion
+                </Link>
+                <Link
+                  to="/signup"
+                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  Inscription
+                </Link>
+              </>
+            )}
           </div>
 
           <button
@@ -93,20 +112,34 @@ const Header = () => {
               </Link>
             ))}
             <div className="pt-4 space-y-2">
-              <Link
-                to="/login"
-                onClick={() => setIsMenuOpen(false)}
-                className="block px-4 py-2 text-gray-300 hover:text-white transition-colors duration-300"
-              >
-                Connexion
-              </Link>
-              <Link
-                to="/signup"
-                onClick={() => setIsMenuOpen(false)}
-                className="block px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full text-center hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
-              >
-                Inscription
-              </Link>
+              {currentUser ? (
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all duration-300"
+                >
+                  <LogOut className="w-4 h-4 mr-2 inline" /> Logout
+                </button>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block px-4 py-2 text-gray-300 hover:text-white transition-colors duration-300"
+                  >
+                    Connexion
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full text-center hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
+                  >
+                    Inscription
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </motion.div>
