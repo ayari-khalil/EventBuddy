@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema({
   interests: [{ type: String }], // ex: "AI", "Blockchain"
   goals: [{ type: String }],     // ex: "Trouver investisseur"
   role: { type: String, enum: ["USER", "ADMIN"], default: "USER" },
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
 
   // 🔗 Liens sociaux (objets avec nom + url)
   socialLinks: [

@@ -322,7 +322,7 @@ const saveProfile = async () => {
         <span className="text-blue-300">{interest}</span>
         {isEditing && (
           <button
-            onClick={() => removeInterest(profileData._id, interest)}
+            onClick={() => removeInterest(interest)}
             className="text-blue-400 hover:text-red-400 transition-colors duration-300"
           >
             <X className="w-3 h-3" />

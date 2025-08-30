@@ -16,6 +16,8 @@ import MessagesPage from './pages/MessagesPage';
 import MyEvents from './pages/MyEvents';
 import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
     const [user, setUser] = useState<any>(null);
@@ -49,6 +51,10 @@ function App() {
             <Route path="/my-events" element={<MyEvents />} />
             <Route path="/analytics" element={<Analytics />} />
             <Route path="/settings" element={<Settings />} />
+           <Route path="/forgot-password" element={<ForgotPassword />} />
+           <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+
           </Routes>
         </AnimatePresence>
         <Footer />
