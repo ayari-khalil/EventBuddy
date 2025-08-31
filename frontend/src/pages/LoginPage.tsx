@@ -42,14 +42,20 @@ const handleSubmit = (e: React.FormEvent) => {
   body: JSON.stringify({ email, password }),
 })
   .then(async (res) => {
+    console.log("Réponse reçue de l'API:", email);
     const data = await res.json();
     console.log("Réponse API:", data);
 
     setLoading(false);
 
     if (data.user && data.token) {
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        sessionStorage.removeItem("user");
+        sessionStorage.removeItem("token");
       // ✅ Sauvegarde utilisateur
       if (rememberMe) {
+        console.log("Mémorisation de l'utilisateur en localStorage", data.user);
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("token", data.token);
       } else {
