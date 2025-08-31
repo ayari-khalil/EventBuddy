@@ -1,32 +1,78 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { Menu, X, Zap, Users, Brain, Calendar, MessageCircle, BarChart3, Settings as SettingsIcon, Shield } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
+import {
+  Menu,
+  X,
+  Zap,
+  Users,
+  Brain,
+  Calendar,
+  MessageCircle,
+  BarChart3,
+  Settings as SettingsIcon,
+  Shield,
+  LogOut,
+  Home,
+  Info,
+  User,
+} from "lucide-react";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [user, setUser] = useState<any>(null);
   const location = useLocation();
-  const isAdmin = true; // TODO: Replace with actual admin check
+  const navigate = useNavigate();
 
-  const navigation = [
-    { name: 'Accueil', href: '/', icon: Zap },
-    { name: 'Dashboard', href: '/dashboard', icon: Brain },
-    { name: 'Événements', href: '/events', icon: Calendar },
-    { name: 'Matching', href: '/matching', icon: Users },
-    { name: 'Messages', href: '/messages', icon: MessageCircle },
-    { name: 'Analytics', href: '/analytics', icon: BarChart3 },
-    { name: 'À propos', href: '/about', icon: Users },
-    ...(isAdmin ? [{ name: 'Admin', href: '/admin', icon: Shield }] : []),
+  // Charger l'utilisateur depuis localStorage/sessionStorage
+  useEffect(() => {
+    const storedUser =
+      JSON.parse(localStorage.getItem("user") || "null") ||
+      JSON.parse(sessionStorage.getItem("user") || "null");
+    setUser(storedUser);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("token");
+    setUser(null);
+    navigate("/login");
+  };
+
+  // Navigation publique (pas connecté)
+  const publicNav = [
+    { name: "Accueil", href: "/", icon: Home },
+    { name: "À propos", href: "/about", icon: Info },
   ];
 
+  // Navigation utilisateur connecté (USER)
+  const userNav = [
+    { name: "Profil", href: "/profile", icon: User },
+    { name: "Événements", href: "/events", icon: Calendar },
+    { name: "Matching", href: "/matching", icon: Users },
+    { name: "Messages", href: "/messages", icon: MessageCircle },
+    { name: "Analytics", href: "/analytics", icon: BarChart3 },
+    { name: "Paramètres", href: "/settings", icon: SettingsIcon },
+  ];
+
+  // Si admin → ajoute le bouton dashboard admin
+  if (user?.role === "admin") {
+    userNav.push({ name: "Admin", href: "/admindashboard", icon: Shield });
+  }
+
+  const navigation = user ? userNav : publicNav;
+
   return (
-    <motion.header 
+    <motion.header
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className="fixed top-0 w-full z-50 backdrop-blur-md bg-white/5 border-b border-white/10"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
+          {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
             <div className="relative">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
@@ -39,15 +85,16 @@ const Header = () => {
             </span>
           </Link>
 
-          <nav className="hidden md:flex space-x-8">
+          {/* Navigation desktop */}
+          <nav className="hidden md:flex space-x-6">
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
                 className={`flex items-center space-x-1 px-4 py-2 rounded-full transition-all duration-300 ${
                   location.pathname === item.href
-                    ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-blue-500/30'
-                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                    ? "bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white border border-blue-500/30"
+                    : "text-gray-300 hover:text-white hover:bg-white/5"
                 }`}
               >
                 <item.icon className="w-4 h-4" />
@@ -56,21 +103,35 @@ const Header = () => {
             ))}
           </nav>
 
+          {/* Boutons droits */}
           <div className="hidden md:flex space-x-4">
-            <Link
-              to="/login"
-              className="px-6 py-2 text-gray-300 hover:text-white transition-colors duration-300"
-            >
-              Connexion
-            </Link>
-            <Link
-              to="/signup"
-              className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
-            >
-              Inscription
-            </Link>
+            {user ? (
+              <button
+                onClick={handleLogout}
+                className="flex items-center px-4 py-2 text-red-400 hover:text-red-600 transition-colors duration-300"
+              >
+                <LogOut className="w-4 h-4 mr-1" />
+                Déconnexion
+              </button>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="px-6 py-2 text-gray-300 hover:text-white transition-colors duration-300"
+                >
+                  Connexion
+                </Link>
+                <Link
+                  to="/signup"
+                  className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+                >
+                  Inscription
+                </Link>
+              </>
+            )}
           </div>
 
+          {/* Bouton mobile */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             className="md:hidden text-white"
@@ -80,11 +141,12 @@ const Header = () => {
         </div>
       </div>
 
+      {/* Menu mobile */}
       {isMenuOpen && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="md:hidden bg-black/50 backdrop-blur-lg border-t border-white/10"
+          className="md:hidden bg-black/70 backdrop-blur-lg border-t border-white/10"
         >
           <div className="px-4 py-6 space-y-4">
             {navigation.map((item) => (
@@ -99,20 +161,35 @@ const Header = () => {
               </Link>
             ))}
             <div className="pt-4 space-y-2">
-              <Link
-                to="/login"
-                onClick={() => setIsMenuOpen(false)}
-                className="block px-4 py-2 text-gray-300 hover:text-white transition-colors duration-300"
-              >
-                Connexion
-              </Link>
-              <Link
-                to="/signup"
-                onClick={() => setIsMenuOpen(false)}
-                className="block px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full text-center hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
-              >
-                Inscription
-              </Link>
+              {user ? (
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full flex items-center justify-center px-4 py-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-all duration-300"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Déconnexion
+                </button>
+              ) : (
+                <>
+                  <Link
+                    to="/login"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block px-4 py-2 text-gray-300 hover:text-white transition-colors duration-300"
+                  >
+                    Connexion
+                  </Link>
+                  <Link
+                    to="/signup"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full text-center hover:from-blue-600 hover:to-purple-700 transition-all duration-300"
+                  >
+                    Inscription
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </motion.div>
