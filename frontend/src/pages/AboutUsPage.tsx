@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Brain, Users, Target, Zap, Heart, Rocket, Star, Award, ArrowRight, Globe, Shield, Lightbulb } from 'lucide-react';
+import { Calendar } from "../components/ui/calendar";
 
 const AboutUsPage = () => {
   const teamMembers = [

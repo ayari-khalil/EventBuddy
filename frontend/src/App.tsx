@@ -18,6 +18,11 @@ import Analytics from './pages/Analytics';
 import Settings from './pages/Settings';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import AdminDashboard from './pages/AdminDashboard';
+import UserManagement from './pages/admin/UserManagement';
+import ReportsManagement from './pages/admin/ReportsManagement';
+import EventApprovals from './pages/admin/EventApprovals';
+import AdminAnalytics from './pages/admin/AdminAnalytics';
 
 function App() {
     const [user, setUser] = useState<any>(null);
@@ -53,6 +58,11 @@ function App() {
             <Route path="/settings" element={<Settings />} />
            <Route path="/forgot-password" element={<ForgotPassword />} />
            <Route path="/reset-password/:token" element={<ResetPassword />} />
+                       <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<UserManagement />} />
+            <Route path="/admin/reports" element={<ReportsManagement />} />
+            <Route path="/admin/approvals" element={<EventApprovals />} />
+            <Route path="/admin/analytics" element={<AdminAnalytics />} />
 
 
           </Routes>
