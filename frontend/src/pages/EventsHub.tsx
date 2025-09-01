@@ -1,6 +1,9 @@
 import React, { useState,useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Calendar, MapPin, Users, Clock, Star, Filter, Search, Heart, Zap, Target, ArrowRight, Brain, UserPlus, Sparkles } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, Star, Filter, Search, Heart, Zap, Target, ArrowRight, Brain, UserPlus, Sparkles, Plus, MessageCircle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '../components/ui/button';
+
 interface Event {
   id: string;
   title: string;
@@ -22,6 +25,7 @@ interface Event {
   networking?: string;
 }
 const EventsHub = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // grid or list
@@ -68,12 +72,23 @@ const EventsHub = () => {
     // Ici tu appelles l’API POST pour s’inscrire
   };
 
+   const handleDiscussion = (eventId: string) => {
+    navigate(`/event/${eventId}/discussion`);
+  };
+
   if (loading) {
-    return <p className="text-center text-gray-500">Chargement des événements...</p>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-400">Chargement des événements...</p>
+        </div>
+      </div>
+    );
   }
 
 
-  return (
+ return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
@@ -87,12 +102,23 @@ const EventsHub = () => {
           animate={{ y: 0, opacity: 1 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-            Découvrez les événements 🚀
-          </h1>
-          <p className="text-gray-400 text-lg">
-            Trouvez les événements parfaits pour votre networking grâce à notre IA
-          </p>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+                Découvrez les événements 🚀
+              </h1>
+              <p className="text-gray-400 text-lg">
+                Trouvez les événements parfaits pour votre networking grâce à notre IA
+              </p>
+            </div>
+            <Button
+              onClick={() => navigate('/create-event')}
+              className="gradient-button text-white px-6 py-3 flex items-center space-x-2"
+            >
+              <Plus className="w-4 h-4" />
+              <span>Créer un événement</span>
+            </Button>
+          </div>
         </motion.div>
 
         {/* Search and Filters */}
@@ -100,7 +126,7 @@ const EventsHub = () => {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1 }}
-          className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl p-6 mb-8"
+          className="glass-card p-6 mb-8"
         >
           <div className="flex flex-col lg:flex-row gap-4 items-center">
             {/* Search */}
@@ -111,7 +137,7 @@ const EventsHub = () => {
                 placeholder="Rechercher un événement, une technologie..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white placeholder-gray-400 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/20 focus:outline-none transition-all duration-300"
+                className="w-full pl-12 pr-4 py-3 glass-input"
               />
             </div>
 
@@ -125,7 +151,7 @@ const EventsHub = () => {
                   onClick={() => setSelectedCategory(category.id)}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
                     selectedCategory === category.id
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
+                      ? 'gradient-button text-white'
                       : 'bg-white/5 text-gray-300 hover:bg-white/10'
                   }`}
                 >
@@ -156,10 +182,10 @@ const EventsHub = () => {
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.1 * index }}
-                  className="relative bg-gradient-to-br from-white/10 to-white/5 backdrop-blur-xl border border-white/20 rounded-3xl overflow-hidden hover:from-white/15 hover:to-white/10 transition-all duration-500 group"
+                  className="relative glass-card overflow-hidden hover:bg-white/10 transition-all duration-500 group"
                 >
                   <div className="absolute top-4 right-4 z-10">
-                    <div className="bg-gradient-to-r from-yellow-500 to-orange-500 text-white px-3 py-1 rounded-full text-xs font-medium">
+                    <div className="featured-badge">
                       À la une
                     </div>
                   </div>
@@ -174,7 +200,7 @@ const EventsHub = () => {
                     
                     {/* AI Match Score */}
                     <div className="absolute bottom-4 left-4">
-                      <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-sm border border-green-500/30 rounded-full px-3 py-1 flex items-center space-x-2">
+                      <div className="ai-match-badge px-3 py-1 flex items-center space-x-2">
                         <Sparkles className="w-4 h-4 text-green-400" />
                         <span className="text-green-300 text-sm font-medium">{event.aiMatchScore}% match</span>
                       </div>
@@ -218,15 +244,24 @@ const EventsHub = () => {
                         <span className="text-blue-300 text-sm">{event.potentialMatches} matches potentiels</span>
                       </div>
                       
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleApply(event.id)}
-                        className="px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex items-center space-x-2"
-                      >
-                        <span>Postuler</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </motion.button>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDiscussion(event.id)}
+                          className="text-gray-300 border-gray-600 hover:bg-white/10"
+                        >
+                          <MessageCircle className="w-4 h-4 mr-1" />
+                          Discussion
+                        </Button>
+                        <Button
+                          onClick={() => handleApply(event.id)}
+                          className="gradient-button text-white px-6 py-2 flex items-center space-x-2"
+                        >
+                          <span>Postuler</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </motion.div>
@@ -254,7 +289,7 @@ const EventsHub = () => {
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 * index }}
-                className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden hover:bg-white/10 transition-all duration-300 group"
+                className="glass-card overflow-hidden hover:bg-white/10 transition-all duration-300 group"
               >
                 <div className="relative h-40 overflow-hidden">
                   <img
@@ -266,7 +301,7 @@ const EventsHub = () => {
                   
                   {/* AI Match Score */}
                   <div className="absolute top-3 right-3">
-                    <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-sm border border-green-500/30 rounded-full px-2 py-1 flex items-center space-x-1">
+                    <div className="ai-match-badge px-2 py-1 flex items-center space-x-1">
                       <Sparkles className="w-3 h-3 text-green-400" />
                       <span className="text-green-300 text-xs font-medium">{event.aiMatchScore}%</span>
                     </div>
@@ -314,21 +349,30 @@ const EventsHub = () => {
                     ))}
                   </div>
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center space-x-1">
                       <UserPlus className="w-3 h-3 text-blue-400" />
                       <span className="text-blue-300 text-xs">{event.potentialMatches} matches</span>
                     </div>
-                    
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDiscussion(event.id)}
+                      className="flex-1 text-gray-300 border-gray-600 hover:bg-white/10"
+                    >
+                      <MessageCircle className="w-3 h-3 mr-1" />
+                      Discussion
+                    </Button>
+                    <Button
                       onClick={() => handleApply(event.id)}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full hover:from-blue-600 hover:to-purple-700 transition-all duration-300 text-sm flex items-center space-x-1"
+                      className="flex-1 gradient-button text-white text-sm flex items-center justify-center space-x-1"
                     >
                       <span>Postuler</span>
                       <ArrowRight className="w-3 h-3" />
-                    </motion.button>
+                    </Button>
                   </div>
                 </div>
               </motion.div>
