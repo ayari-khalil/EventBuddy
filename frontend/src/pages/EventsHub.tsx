@@ -1,11 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Calendar, MapPin, Users, Clock, Star, Filter, Search, Heart, Zap, Target, ArrowRight, Brain, UserPlus, Sparkles } from 'lucide-react';
-
+interface Event {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  time?: string;
+  location: string;
+  attendees: number;
+  maxAttendees?: number;
+  category: string;
+  price?: string;
+  organizer?: string;
+  image?: string;
+  tags?: string[];
+  aiMatchScore?: number;
+  potentialMatches?: number;
+  featured?: boolean;
+  difficulty?: string;
+  networking?: string;
+}
 const EventsHub = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('grid'); // grid or list
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  
 
   const categories = [
     { id: 'all', name: 'Tous', icon: Sparkles },
@@ -15,141 +37,41 @@ const EventsHub = () => {
     { id: 'ai', name: 'IA', icon: Brain }
   ];
 
-  const events = [
-    {
-      id: 1,
-      title: "AI Revolution Summit 2025",
-      description: "Le plus grand événement IA de l'année avec les leaders mondiaux de l'intelligence artificielle",
-      date: "15 Mars 2025",
-      time: "09:00 - 18:00",
-      location: "Station F, Paris",
-      attendees: 1200,
-      maxAttendees: 1500,
-      category: "ai",
-      price: "Gratuit",
-      organizer: "AI France",
-      image: "https://images.pexels.com/photos/2747449/pexels-photo-2747449.jpeg?auto=compress&cs=tinysrgb&w=600",
-      tags: ["IA", "Machine Learning", "Deep Learning"],
-      aiMatchScore: 95,
-      potentialMatches: 47,
-      featured: true,
-      difficulty: "Intermédiaire",
-      networking: "Élevé"
-    },
-    {
-      id: 2,
-      title: "Startup Grind Paris",
-      description: "Rencontrez les entrepreneurs les plus prometteurs et les investisseurs de la capitale",
-      date: "22 Mars 2025",
-      time: "18:00 - 22:00",
-      location: "WeWork Opéra, Paris",
-      attendees: 300,
-      maxAttendees: 400,
-      category: "startup",
-      price: "25€",
-      organizer: "Startup Grind",
-      image: "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=600",
-      tags: ["Entrepreneuriat", "Investissement", "Pitch"],
-      aiMatchScore: 88,
-      potentialMatches: 23,
-      featured: false,
-      difficulty: "Débutant",
-      networking: "Très élevé"
-    },
-    {
-      id: 3,
-      title: "Blockchain & Web3 Conference",
-      description: "Explorez l'avenir de la finance décentralisée et des technologies blockchain",
-      date: "5 Avril 2025",
-      time: "10:00 - 17:00",
-      location: "Palais des Congrès, Paris",
-      attendees: 800,
-      maxAttendees: 1000,
-      category: "tech",
-      price: "150€",
-      organizer: "Blockchain France",
-      image: "https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=600",
-      tags: ["Blockchain", "Crypto", "DeFi", "NFT"],
-      aiMatchScore: 76,
-      potentialMatches: 31,
-      featured: false,
-      difficulty: "Avancé",
-      networking: "Moyen"
-    },
-    {
-      id: 4,
-      title: "Future of Work Summit",
-      description: "Comment l'IA et l'automatisation transforment le monde du travail",
-      date: "12 Avril 2025",
-      time: "09:30 - 16:30",
-      location: "La Défense Arena, Paris",
-      attendees: 600,
-      maxAttendees: 800,
-      category: "business",
-      price: "75€",
-      organizer: "Future Work Institute",
-      image: "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=600",
-      tags: ["RH", "Management", "Innovation"],
-      aiMatchScore: 82,
-      potentialMatches: 19,
-      featured: true,
-      difficulty: "Intermédiaire",
-      networking: "Élevé"
-    },
-    {
-      id: 5,
-      title: "Women in Tech Meetup",
-      description: "Réseau exclusif pour les femmes leaders dans la technologie",
-      date: "18 Avril 2025",
-      time: "19:00 - 22:00",
-      location: "Google Campus, Paris",
-      attendees: 150,
-      maxAttendees: 200,
-      category: "tech",
-      price: "Gratuit",
-      organizer: "Women in Tech Paris",
-      image: "https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=600",
-      tags: ["Diversité", "Leadership", "Tech"],
-      aiMatchScore: 91,
-      potentialMatches: 12,
-      featured: false,
-      difficulty: "Tous niveaux",
-      networking: "Très élevé"
-    },
-    {
-      id: 6,
-      title: "SaaS Growth Masterclass",
-      description: "Stratégies avancées pour faire croître votre SaaS de 0 à 100M€",
-      date: "25 Avril 2025",
-      time: "14:00 - 18:00",
-      location: "Hôtel des Arts et Métiers, Paris",
-      attendees: 250,
-      maxAttendees: 300,
-      category: "business",
-      price: "200€",
-      organizer: "SaaS Academy",
-      image: "https://images.pexels.com/photos/3184287/pexels-photo-3184287.jpeg?auto=compress&cs=tinysrgb&w=600",
-      tags: ["SaaS", "Growth", "Marketing"],
-      aiMatchScore: 79,
-      potentialMatches: 15,
-      featured: false,
-      difficulty: "Avancé",
-      networking: "Moyen"
-    }
-  ];
+  // 🔹 Charger les events depuis le backend
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/events"); // ton backend
+        const data = await res.json();
+        setEvents(data);
+      } catch (err) {
+        console.error("Erreur lors du fetch des événements:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
 
+  // 🔎 Filtrage
   const filteredEvents = events.filter(event => {
     const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
-    const matchesSearch = event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         event.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+    const matchesSearch =
+      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (event.tags && event.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
     return matchesCategory && matchesSearch;
   });
 
-  const handleApply = (eventId: number) => {
+  const handleApply = (eventId: string) => {
     console.log('Applying to event:', eventId);
-    // Here you would handle the application logic
+    // Ici tu appelles l’API POST pour s’inscrire
   };
+
+  if (loading) {
+    return <p className="text-center text-gray-500">Chargement des événements...</p>;
+  }
+
 
   return (
     <motion.div
@@ -382,7 +304,7 @@ const EventsHub = () => {
 
                   {/* Tags */}
                   <div className="flex flex-wrap gap-1 mb-4">
-                    {event.tags.slice(0, 3).map((tag) => (
+                    {event.tags?.slice(0, 3).map((tag) => (
                       <span
                         key={tag}
                         className="px-2 py-1 bg-blue-500/20 text-blue-300 text-xs rounded-full"

@@ -20,7 +20,7 @@ const eventSchema = new mongoose.Schema({
   potentialMatches: { type: Number, default: 0 }, // nb de matchs suggérés
   
   featured: { type: Boolean, default: false }, // événement mis en avant ou pas
-  difficulty: { type: String, enum: ["Débutant", "Intermédiaire", "Avancé"], default: "Débutant" },
+  difficulty: { type: String, enum: ["Débutant", "Intermédiaire", "Avancé","Tous niveaux"], default: "Débutant" },
   networking: { type: String, default: "Moyen" }, // niveau de networking
   
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // organisateur (User)
