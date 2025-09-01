@@ -4,44 +4,56 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
+  
   bio: { type: String },
-  interests: [{ type: String }], // ex: "AI", "Blockchain"
-  goals: [{ type: String }],     // ex: "Trouver investisseur"
-  role: { type: String, enum: ["USER", "ADMIN"], default: "USER" },
-  resetPasswordToken: String,
-  resetPasswordExpires: Date,
+  interests: [{ type: String }],
+  goals: [{ type: String }],
 
-  // 🔗 Liens sociaux (objets avec nom + url)
+  role: { type: String, enum: ["USER", "ADMIN"], default: "USER" },
+  status: { type: String, enum: ["active", "inactive", "banned"], default: "active" },
+
+  // ✅ Nouveaux champs pertinents
+  avatar: { type: String, default: "" }, // photo profil
+  location: { type: String },
+  verified: { type: Boolean, default: false },
+  subscription: { type: String, enum: ["free", "premium"], default: "free" },
+  reports: { type: Number, default: 0 },
+  lastActive: { type: Date },
+
+  // 🔗 Liens sociaux
   socialLinks: [
     {
-      platform: { type: String }, // ex: "LinkedIn", "GitHub"
-      url: { type: String }
+      platform: { type: String },
+      url: { type: String },
     }
   ],
 
   // 👥 Connexions avec d’autres users
   connections: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
 
-  // 🏆 Accomplissements (liste avec titre + description + date)
+  // 🏆 Accomplissements
   accomplishments: [
     {
-      title: { type: String }, // ex: "Certificat AWS"
+      title: { type: String },
       description: { type: String },
-      date: { type: Date, default: Date.now }
+      date: { type: Date, default: Date.now },
     }
   ],
 
-  // 📅 Événements (créés ou rejoints)
+  // 📅 Événements liés
   events: [
     {
-      title: { type: String }, // ex: "Hackathon 2025"
+      title: { type: String },
       description: { type: String },
       date: { type: Date },
-      location: { type: String }
+      location: { type: String },
     }
   ],
 
-  createdAt: { type: Date, default: Date.now }
+  resetPasswordToken: String,
+  resetPasswordExpires: Date,
+
+  createdAt: { type: Date, default: Date.now },
 });
 
 const User = mongoose.model("User", userSchema);

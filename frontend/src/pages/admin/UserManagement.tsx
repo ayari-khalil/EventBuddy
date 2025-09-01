@@ -1,116 +1,73 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect } from 'react';
+import axios from "axios";
 import { motion } from 'framer-motion';
 import { 
   Users, Search, Filter, MoreVertical, Eye, UserCheck, UserX, 
   Shield, Mail, Calendar, MapPin, Activity, Ban, CheckCircle,
   AlertTriangle, Edit, Trash2, Download, Upload, RefreshCw
 } from 'lucide-react';
+interface User {
+id: string;
+  name: string;
+  email: string;
+  role: string;
+  status?: string;
+  joinDate?: string;
+  lastActive?: string;
+  eventsAttended?: number;
+  connections?: number;
+  reports?: number | 0;
+  avatar?: string;
+  location?: string;
+  verified?: boolean;
+  subscription?: string;
+}
 
 const UserManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [showUserModal, setShowUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
-  const users = [
-    {
-      id: 1,
-      name: "Marie Dubois",
-      email: "marie.dubois@email.com",
-      role: "USER",
-      status: "active",
-      joinDate: "2025-01-15",
-      lastActive: "2025-03-10",
-      eventsAttended: 12,
-      connections: 45,
-      reports: 0,
-      avatar: "https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=100",
-      location: "Paris, France",
-      verified: true,
-      subscription: "premium"
-    },
-    {
-      id: 2,
-      name: "Thomas Martin",
-      email: "thomas.martin@email.com",
-      role: "USER",
-      status: "active",
-      joinDate: "2025-02-01",
-      lastActive: "2025-03-09",
-      eventsAttended: 8,
-      connections: 32,
-      reports: 1,
-      avatar: "https://images.pexels.com/photos/3777931/pexels-photo-3777931.jpeg?auto=compress&cs=tinysrgb&w=100",
-      location: "Lyon, France",
-      verified: true,
-      subscription: "free"
-    },
-    {
-      id: 3,
-      name: "Sophie Laurent",
-      email: "sophie.laurent@email.com",
-      role: "ORGANIZER",
-      status: "suspended",
-      joinDate: "2024-12-10",
-      lastActive: "2025-03-05",
-      eventsAttended: 25,
-      connections: 78,
-      reports: 3,
-      avatar: "https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=100",
-      location: "Marseille, France",
-      verified: false,
-      subscription: "premium"
-    },
-    {
-      id: 4,
-      name: "Alexandre Chen",
-      email: "alex.chen@email.com",
-      role: "USER",
-      status: "pending",
-      joinDate: "2025-03-08",
-      lastActive: "2025-03-10",
-      eventsAttended: 2,
-      connections: 12,
-      reports: 0,
-      avatar: "https://images.pexels.com/photos/3777931/pexels-photo-3777931.jpeg?auto=compress&cs=tinysrgb&w=100",
-      location: "Nice, France",
-      verified: false,
-      subscription: "free"
-    },
-    {
-      id: 5,
-      name: "Emma Rodriguez",
-      email: "emma.rodriguez@email.com",
-      role: "ADMIN",
-      status: "active",
-      joinDate: "2024-11-01",
-      lastActive: "2025-03-10",
-      eventsAttended: 35,
-      connections: 156,
-      reports: 0,
-      avatar: "https://images.pexels.com/photos/3769021/pexels-photo-3769021.jpeg?auto=compress&cs=tinysrgb&w=100",
-      location: "Barcelona, Spain",
-      verified: true,
-      subscription: "admin"
+ const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
+
+useEffect(() => {
+  const fetchUsers = async () => {
+    try {
+      const response = await axios.get<{ users: User[] }>("http://localhost:5000/api/users"); // si l’API renvoie { users: [...] }
+      console.log(response.data); // 🔍 Vérifie ce que tu reçois
+      setUsers(Array.isArray(response.data) ? response.data : response.data.users);
+    } catch (error) {
+      console.error("Erreur lors du chargement des utilisateurs:", error);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  const filters = [
-    { id: 'all', label: 'Tous', count: users.length },
-    { id: 'active', label: 'Actifs', count: users.filter(u => u.status === 'active').length },
-    { id: 'suspended', label: 'Suspendus', count: users.filter(u => u.status === 'suspended').length },
-    { id: 'pending', label: 'En attente', count: users.filter(u => u.status === 'pending').length },
-    { id: 'reported', label: 'Signalés', count: users.filter(u => u.reports > 0).length }
-  ];
+  fetchUsers();
+}, []);
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = selectedFilter === 'all' || 
-                         (selectedFilter === 'reported' ? user.reports > 0 : user.status === selectedFilter);
-    return matchesSearch && matchesFilter;
-  });
+    if (loading) return <div>Chargement...</div>;
+
+
+const filters = [
+  { id: 'all', label: 'Tous', count: users?.length ?? 0 },
+  { id: 'active', label: 'Actifs', count: users?.filter(u => u.status === 'active').length ?? 0 },
+  { id: 'suspended', label: 'Suspendus', count: users?.filter(u => u.status === 'suspended').length ?? 0 },
+  { id: 'pending', label: 'En attente', count: users?.filter(u => u.status === 'pending').length ?? 0 },
+  { id: 'reported', label: 'Signalés', count: users?.filter(u => (u.reports || 0) > 0).length ?? 0 }
+];
+
+const filteredUsers = (users ?? []).filter(user => {
+  const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        user.email.toLowerCase().includes(searchQuery.toLowerCase());
+  const matchesFilter = selectedFilter === 'all' || 
+                        (selectedFilter === 'reported' ? (user.reports || 0) > 0 : user.status === selectedFilter);
+  return matchesSearch && matchesFilter;
+});
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -129,7 +86,7 @@ const UserManagement = () => {
     }
   };
 
-  const handleUserAction = (userId: number, action: string) => {
+  const handleUserAction = (userId: string, action: string) => {
     console.log(`Action ${action} on user ${userId}`);
     // Implement user actions
   };
@@ -139,13 +96,13 @@ const UserManagement = () => {
     // Implement bulk actions
   };
 
-  const toggleUserSelection = (userId: number) => {
-    setSelectedUsers(prev => 
-      prev.includes(userId) 
-        ? prev.filter(id => id !== userId)
-        : [...prev, userId]
-    );
-  };
+const toggleUserSelection = (userId: string) => {
+  setSelectedUsers(prev => 
+    prev.includes(userId)
+      ? prev.filter(id => id !== userId)
+      : [...prev, userId]
+  );
+};
 
   const selectAllUsers = () => {
     setSelectedUsers(filteredUsers.map(user => user.id));
@@ -359,8 +316,7 @@ const UserManagement = () => {
                     </td>
                     
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(user.status)}`}>
-                        {user.status === 'active' ? 'Actif' :
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(user.status || '')}`}>                        {user.status === 'active' ? 'Actif' :
                          user.status === 'suspended' ? 'Suspendu' :
                          user.status === 'pending' ? 'En attente' : user.status}
                       </span>
@@ -380,7 +336,7 @@ const UserManagement = () => {
                     </td>
                     
                     <td className="px-6 py-4">
-                      {user.reports > 0 ? (
+                      {(user.reports || 0) > 0 ? (
                         <div className="flex items-center space-x-1">
                           <AlertTriangle className="w-4 h-4 text-red-400" />
                           <span className="text-red-400 font-medium">{user.reports}</span>

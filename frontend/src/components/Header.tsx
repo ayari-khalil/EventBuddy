@@ -58,8 +58,8 @@ const Header = () => {
   ];
 
   // Si admin → ajoute le bouton dashboard admin
-  if (user?.role === "admin") {
-    userNav.push({ name: "Admin", href: "/admindashboard", icon: Shield });
+  if (user?.role === "ADMIN") {
+    userNav.push({ name: "Admin", href: "/admin", icon: Shield });
   }
 
   const navigation = user ? userNav : publicNav;
