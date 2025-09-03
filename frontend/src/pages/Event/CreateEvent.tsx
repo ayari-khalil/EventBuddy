@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { 
@@ -17,13 +17,15 @@ import {
   TrendingUp
 } from 'lucide-react';
 import { Button } from '../../components/ui/button';
+import axios from 'axios';
+
 
 interface EventFormData {
   title: string;
   description: string;
+  location: string;
   date: string;
   time: string;
-  location: string;
   maxAttendees: string;
   category: string;
   price: string;
@@ -51,6 +53,54 @@ const CreateEvent = () => {
     difficulty: 'Débutant',
     networking: 'Modéré'
   });
+
+ const [user, setUser] = useState<any | null>(null);
+
+    const [profileData, setProfileData] = useState({
+      _id: "",
+      name: "",
+      email: "",
+      bio: "",
+      location: "",
+      interests: [] as string[],
+      goals: [] as string[],
+      joinDate: "",
+      matches: [] as string[],
+  
+    });
+  
+  
+  useEffect(() => {
+      const storedUser =
+        localStorage.getItem("user") || sessionStorage.getItem("user");
+        console.log("→ Données utilisateur récupérées :", storedUser);
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          setUser(parsedUser);
+  
+          // Remplir profileData avec les infos du backend
+          setProfileData({
+            _id: parsedUser._id || "",
+            name: parsedUser.name || "Nom inconnu",
+            email: parsedUser.email || "Email non renseigné",
+            bio: parsedUser.bio || "Aucune bio disponible",
+            location: parsedUser.location || "Non spécifié",
+            interests: parsedUser.interests || [],
+            goals: parsedUser.goals || [],
+            joinDate: new Date(parsedUser.createdAt).toLocaleDateString("fr-FR", {
+              month: "long",
+              year: "numeric",
+            }),
+          matches: parsedUser.matches || [],
+          });
+        } catch (error) {
+          console.error("Erreur lors du parsing des données utilisateur :", error);
+          localStorage.removeItem("user");
+          sessionStorage.removeItem("user");
+        }
+      }
+    }, []);
 
   const [currentTag, setCurrentTag] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -94,35 +144,24 @@ const CreateEvent = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Simulate API call
     try {
-      const eventData = {
+      const response = await axios.post('http://localhost:5000/api/events', {
         ...formData,
-        id: Date.now(),
-        attendees: 0,
+        createdBy: profileData._id || "Utilisateur inconnu",
         aiMatchScore: Math.floor(Math.random() * 30) + 70,
         potentialMatches: Math.floor(Math.random() * 20) + 5,
         featured: false
-      };
+      });
 
-      console.log('Creating event:', eventData);
-      
-      // Here you would make the actual API call
-      // await fetch('http://localhost:5000/api/events', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(eventData)
-      // });
-
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate network delay
-      
-      navigate('/', { state: { message: 'Événement créé avec succès!' } });
+      console.log('Event created:', response.data);
+      navigate('/events', { state: { message: 'Événement créé avec succès!' } });
     } catch (error) {
       console.error('Error creating event:', error);
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   return (
     <motion.div
