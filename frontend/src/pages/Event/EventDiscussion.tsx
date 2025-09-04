@@ -8,11 +8,8 @@ import {
   Users,
   Calendar,
   MapPin,
-  Star,
   Heart,
   Reply,
-  MoreVertical,
-  Sparkles,
   Pin,
   Search
 } from 'lucide-react';
