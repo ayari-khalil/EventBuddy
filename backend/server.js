@@ -3,47 +3,47 @@ import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 import { createServer } from "http";
-import path from "path";
-import { fileURLToPath } from "url";
-
-// Import routes
+import { Server } from "socket.io";
 import matchRoutes from "./routes/matchRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
-import discussionRoutes from "./routes/discussion.js";
-import directMessageRoutes from "./routes/directMessages.js";
+import discussionRoutes from "./routes/discussionRoutes.js";
 
-// Import socket server
-import SocketServer from "./socket/socketServer.js";
+
 
 dotenv.config();
 
 const app = express();
 const server = createServer(app);
 
-// ⚙️ Middleware
+// Socket.io config
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:5173", 
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  },
+  pingTimeout: 60000,
+});
+
+//  Middleware
 app.use(express.json());
 app.use(
   cors({
-    origin: "*", // 🔥 sécuriser en prod
+    origin: "http://localhost:5173",
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
-
-// 📂 Serve uploaded files
-app.use("/uploads", express.static("uploads"));
-
-// 🚏 API routes
 app.use("/api/matches", matchRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/users", userRoutes);
-app.use("/api/discussion", discussionRoutes);
-app.use("/api/messages", directMessageRoutes);
+app.use("/api/discussions", discussionRoutes);
+
+
 
 // 🌍 MongoDB connection
 mongoose
-  .connect(process.env.MONGO_URI || "mongodb://localhost:27017/networking-app", {
+  .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })
@@ -55,8 +55,23 @@ app.get("/", (req, res) => {
   res.json({ message: "🚀 EventBuddy API is running!" });
 });
 
-// 🔥 WebSocket (using SocketServer class)
-new SocketServer(server);
+// 🔥 WebSocket logique (chat / notifications)
+io.on("connection", (socket) => {
+  console.log(`⚡ User connected: ${socket.id}`);
+
+  // Recevoir un message
+  socket.on("sendMessage", (data) => {
+    console.log("📩 Message reçu:", data);
+
+    // Diffuser à tous les autres utilisateurs
+    io.emit("receiveMessage", data);
+  });
+
+  // Déconnexion
+  socket.on("disconnect", () => {
+    console.log(`❌ User disconnected: ${socket.id}`);
+  });
+});
 
 // 🛑 404 handler
 app.use((req, res) => {
