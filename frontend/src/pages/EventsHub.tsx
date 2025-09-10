@@ -4,17 +4,17 @@ import { Calendar, MapPin, Users, Clock, Star, Filter, Search, Heart, Zap, Targe
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/button';
 
-interface Event {
-  id: string;
+export interface Event {
+  _id: string; // correspond à _id de MongoDB
   title: string;
   description: string;
-  date: string;
-  time?: string;
   location: string;
+  date: string; // format "YYYY-MM-DD"
+  time?: string; // ex: "22:00"
   attendees: number;
   maxAttendees?: number;
   category: string;
-  price?: string;
+  price?: string; // ex: "50Dt"
   organizer?: string;
   image?: string;
   tags?: string[];
@@ -23,7 +23,11 @@ interface Event {
   featured?: boolean;
   difficulty?: string;
   networking?: string;
+  createdBy?: string; // id de l’utilisateur organisateur
+  participants?: string[]; // tableau des IDs des participants
+  __v?: number; // version du document MongoDB
 }
+
 const EventsHub = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -69,6 +73,8 @@ const EventsHub = () => {
 
   const handleApply = (eventId: string) => {
     console.log('Applying to event:', eventId);
+    navigate(`/event/${eventId}/book`);
+
     // Ici tu appelles l’API POST pour s’inscrire
   };
 
@@ -178,7 +184,7 @@ const EventsHub = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {filteredEvents.filter(event => event.featured).map((event, index) => (
                 <motion.div
-                  key={event.id}
+                  key={event._id}
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.1 * index }}
@@ -248,14 +254,14 @@ const EventsHub = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleDiscussion(event.id)}
+                          onClick={() => handleDiscussion(event._id)}
                           className="text-gray-300 border-gray-600 hover:bg-white/10"
                         >
                           <MessageCircle className="w-4 h-4 mr-1" />
                           Discussion
                         </Button>
                         <Button
-                          onClick={() => handleApply(event.id)}
+                          onClick={() => handleApply(event._id)}
                           className="gradient-button text-white px-6 py-2 flex items-center space-x-2"
                         >
                           <span>Postuler</span>
@@ -285,7 +291,7 @@ const EventsHub = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredEvents.filter(event => !event.featured).map((event, index) => (
               <motion.div
-                key={event.id}
+                key={event._id}
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 transition={{ delay: 0.1 * index }}
@@ -360,14 +366,14 @@ const EventsHub = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDiscussion(event.id)}
+                      onClick={() => handleDiscussion(event._id)}
                       className="flex-1 text-gray-300 border-gray-600 hover:bg-white/10"
                     >
                       <MessageCircle className="w-3 h-3 mr-1" />
                       Discussion
                     </Button>
                     <Button
-                      onClick={() => handleApply(event.id)}
+                      onClick={() => handleApply(event._id)}
                       className="flex-1 gradient-button text-white text-sm flex items-center justify-center space-x-1"
                     >
                       <span>Postuler</span>
