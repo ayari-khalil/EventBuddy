@@ -7,6 +7,8 @@ import { Server } from "socket.io";
 import matchRoutes from "./routes/matchRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import discussionRoutes from "./routes/discussionRoutes.js";
+
 
 
 dotenv.config();
@@ -14,20 +16,20 @@ dotenv.config();
 const app = express();
 const server = createServer(app);
 
-// ⚡ Socket.io config
+// Socket.io config
 const io = new Server(server, {
   cors: {
-    origin: "*", // 🔥 En prod : mettre l'URL du frontend
+    origin: "http://localhost:5173", 
     methods: ["GET", "POST", "PUT", "DELETE"],
   },
   pingTimeout: 60000,
 });
 
-// ⚙️ Middleware
+//  Middleware
 app.use(express.json());
 app.use(
   cors({
-    origin: "*", // 🔥 sécuriser en prod
+    origin: "http://localhost:5173",
     methods: ["GET", "POST", "PATCH", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
@@ -35,6 +37,7 @@ app.use(
 app.use("/api/matches", matchRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/discussions", discussionRoutes);
 
 
 
