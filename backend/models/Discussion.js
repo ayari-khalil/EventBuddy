@@ -23,7 +23,6 @@ const discussionSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Event',
     required: true,
-    unique: true
   },
   isActive: {
     type: Boolean,

@@ -18,6 +18,10 @@ export const initializeSocket = (server) => {
   io.on("connection", (socket) => {
     console.log(`User connected: ${socket.id}`);
 
+    // Initialize storage for multiple events
+    socket.userId = null;
+    socket.eventIds = [];
+
     // Join discussion
     socket.on("join_discussion", async (data) => {
       try {
@@ -28,12 +32,14 @@ export const initializeSocket = (server) => {
           return;
         }
 
-        // Store on socket for later use (leave/disconnect)
-        socket.userId = userId;
-        socket.eventId = eventId;
+        // Save userId if not already stored
+        if (!socket.userId) socket.userId = userId;
 
-        // Join the socket.io room
-        socket.join(`event_${eventId}`);
+        // Join event room only once
+        if (!socket.eventIds.includes(eventId)) {
+          socket.eventIds.push(eventId);
+          socket.join(`event_${eventId}`);
+        }
 
         // Find or create discussion
         let discussion = await Discussion.findOne({ eventId });
@@ -41,10 +47,10 @@ export const initializeSocket = (server) => {
           discussion = await Discussion.create({ eventId, messageCount: 0 });
         }
 
-        await discussion.addActiveUser(userId); // assuming your model has this method
+        await discussion.addActiveUser(userId);
         await discussion.populate("activeUsers.user", "name email profileImage");
 
-        // Broadcast updated active users
+        // Broadcast active users
         const activeUsers = discussion.activeUsers.filter(
           (u) => u.lastSeen > new Date(Date.now() - 5 * 60 * 1000)
         );
@@ -60,7 +66,7 @@ export const initializeSocket = (server) => {
           }))
         });
 
-        // Send recent messages
+        // Send last 50 messages
         const messages = await Message.find({ eventId })
           .sort({ createdAt: -1 })
           .limit(50)
@@ -103,7 +109,7 @@ export const initializeSocket = (server) => {
         await message.save();
         await message.populate("author", "name email profileImage");
 
-        // Update discussion
+        // Update discussion stats
         const discussion = await Discussion.findOne({ eventId });
         if (discussion) {
           discussion.messageCount += 1;
@@ -111,14 +117,12 @@ export const initializeSocket = (server) => {
           await discussion.save();
         }
 
-        // If it's a reply, add to parent's replies
         if (parentMessageId) {
           await Message.findByIdAndUpdate(parentMessageId, {
             $push: { replies: message._id }
           });
         }
 
-        // Emit to all users in the discussion
         io.to(`event_${eventId}`).emit("new_message", {
           message: {
             _id: message._id,
@@ -155,7 +159,7 @@ export const initializeSocket = (server) => {
       }
     });
 
-    // Add reaction to message
+    // Add reaction
     socket.on("add_reaction", async (data) => {
       try {
         const { messageId, emoji, userId } = data;
@@ -174,9 +178,7 @@ export const initializeSocket = (server) => {
             );
             reaction.count = reaction.users.length;
             if (reaction.count === 0) {
-              message.reactions = message.reactions.filter(
-                (r) => r.emoji !== emoji
-              );
+              message.reactions = message.reactions.filter((r) => r.emoji !== emoji);
             }
           } else {
             reaction.users.push(userId);
@@ -199,48 +201,49 @@ export const initializeSocket = (server) => {
       }
     });
 
-    // Leave discussion
-    socket.on("leave_discussion", async () => {
+    // Leave discussion (only one event at a time)
+    socket.on("leave_discussion", async (data) => {
       try {
-        const { userId, eventId } = socket;
-        if (userId && eventId) {
-          const discussion = await Discussion.findOne({ eventId });
-          if (discussion) {
-            await discussion.removeActiveUser(userId);
-            await discussion.populate("activeUsers.user", "name email profileImage");
+        const { eventId } = data;
+        if (!eventId) return;
 
-            const activeUsers = discussion.activeUsers.filter(
-              (u) => u.lastSeen > new Date(Date.now() - 5 * 60 * 1000)
-            );
+        socket.eventIds = socket.eventIds.filter((id) => id !== eventId);
 
-            io.to(`event_${eventId}`).emit("active_users_update", {
-              activeUsers: activeUsers.map((u) => ({
-                _id: u.user._id,
-                name: u.user.name,
-                email: u.user.email,
-                profileImage: u.user.profileImage,
-                isTyping: u.isTyping,
-                lastSeen: u.lastSeen
-              }))
-            });
-          }
+        const discussion = await Discussion.findOne({ eventId });
+        if (discussion) {
+          await discussion.removeActiveUser(socket.userId);
+          await discussion.populate("activeUsers.user", "name email profileImage");
 
-          socket.leave(`event_${eventId}`);
-          console.log(`User ${userId} left discussion for event ${eventId}`);
+          const activeUsers = discussion.activeUsers.filter(
+            (u) => u.lastSeen > new Date(Date.now() - 5 * 60 * 1000)
+          );
+
+          io.to(`event_${eventId}`).emit("active_users_update", {
+            activeUsers: activeUsers.map((u) => ({
+              _id: u.user._id,
+              name: u.user.name,
+              email: u.user.email,
+              profileImage: u.user.profileImage,
+              isTyping: u.isTyping,
+              lastSeen: u.lastSeen
+            }))
+          });
         }
+
+        socket.leave(`event_${eventId}`);
+        console.log(`User ${socket.userId} left discussion for event ${eventId}`);
       } catch (error) {
         console.error("Error leaving discussion:", error);
       }
     });
 
-    // Handle disconnection
+    // Handle disconnection (leave all events)
     socket.on("disconnect", async () => {
       try {
-        const { userId, eventId } = socket;
-        if (userId && eventId) {
+        for (const eventId of socket.eventIds) {
           const discussion = await Discussion.findOne({ eventId });
           if (discussion) {
-            await discussion.removeActiveUser(userId);
+            await discussion.removeActiveUser(socket.userId);
             await discussion.populate("activeUsers.user", "name email profileImage");
 
             const activeUsers = discussion.activeUsers.filter(
@@ -257,8 +260,11 @@ export const initializeSocket = (server) => {
                 lastSeen: u.lastSeen
               }))
             });
+
+            socket.leave(`event_${eventId}`);
           }
         }
+
         console.log(`User disconnected: ${socket.id}`);
       } catch (error) {
         console.error("Error handling disconnect:", error);
@@ -266,7 +272,7 @@ export const initializeSocket = (server) => {
     });
   });
 
-  // Clean inactive users every 5 minutes
+  // Clean inactive users every 5 min
   setInterval(async () => {
     try {
       const discussions = await Discussion.find({});
