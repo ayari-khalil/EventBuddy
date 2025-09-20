@@ -1,47 +1,121 @@
 // controllers/discussionController.js
-import DiscussionMessage from '../models/DiscussionMessage.js';
-import Event from '../models/Event.js';
-import mongoose from 'mongoose';
+import { Discussion } from "../models/Discussion.js";
+import Event from "../models/Event.js";
+import User from "../models/User.js";
+import Message from "../models/DiscussionMessage.js";
 
-// Get all messages for an event
+// Get or create discussion for an event
+export const getOrCreateDiscussion = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    // Check if event exists
+    const event = await Event.findById(eventId);
+    if (!event) {
+      return res.status(404).json({ error: "Event not found" });
+    }
+
+    // Find or create discussion
+    let discussion = await Discussion.findOne({ event: eventId })
+      .populate({
+        path: 'messages',
+        populate: {
+          path: 'author',
+          select: 'name avatar initials'
+        }
+      });
+
+    if (!discussion) {
+      discussion = new Discussion({
+        event: eventId,
+        messages: []
+      });
+      await discussion.save();
+    }
+
+    res.json(discussion);
+  } catch (error) {
+    console.error("Error getting/creating discussion:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// Get messages for an event discussion
 export const getEventMessages = async (req, res) => {
   try {
     const { eventId } = req.params;
-    const { page = 1, limit = 50, parentId = null } = req.query;
+    const { page = 1, limit = 50 } = req.query;
 
-    // Validate event exists
-    const event = await Event.findById(eventId);
-    if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
+    // Find discussion and populate messages with replies
+    const discussion = await Discussion.findOne({ event: eventId });
+    if (!discussion) {
+      return res.json([]);
     }
 
-    const query = {
-      event: eventId,
-      isDeleted: false,
-      ...(parentId ? { parentMessage: parentId } : { parentMessage: null })
-    };
+    // Get messages with pagination
+    const messages = await Message.find({ 
+      _id: { $in: discussion.messages },
+      parentMessage: { $exists: false } // Only top-level messages
+    })
+    .populate('author', 'name avatar initials')
+    .populate({
+      path: 'replies',
+      populate: {
+        path: 'author',
+        select: 'name avatar initials'
+      }
+    })
+    .sort({ createdAt: 1 })
+    .limit(limit * 1)
+    .skip((page - 1) * limit);
 
-    const messages = await DiscussionMessage.find(query)
-      .populate('author', 'firstName lastName avatar')
-      .populate('replies', 'author content createdAt')
-      .populate('reactions.user', 'firstName lastName')
-      .populate('pinnedBy', 'firstName lastName')
-      .sort({ isPinned: -1, createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .exec();
+    // Transform to match frontend format
+    const transformedMessages = messages.map(message => ({
+      id: message._id.toString(),
+      author: {
+        id: message.author._id.toString(),
+        name: message.author.name,
+        avatar: message.author.avatar || '',
+        initials: message.author.initials || message.author.name.charAt(0).toUpperCase()
+      },
+      content: message.content,
+      timestamp: message.createdAt.toISOString(),
+      reactions: message.reactions.map(reaction => ({
+        emoji: reaction.emoji,
+        users: reaction.users.map(u => u.toString()),
+        count: reaction.count
+      })),
+      isOrganizer: message.author._id.toString() === discussion.event?.createdBy?.toString(),
+      isPinned: message.isPinned,
+      replies: message.replies?.map(reply => ({
+        id: reply._id.toString(),
+        author: {
+          id: reply.author._id.toString(),
+          name: reply.author.name,
+          avatar: reply.author.avatar || '',
+          initials: reply.author.initials || reply.author.name.charAt(0).toUpperCase()
+        },
+        content: reply.content,
+        timestamp: reply.createdAt.toISOString(),
+        reactions: reply.reactions.map(r => ({
+          emoji: r.emoji,
+          users: r.users.map(u => u.toString()),
+          count: r.count
+        })),
+        isOrganizer: reply.author._id.toString() === discussion.event?.createdBy?.toString(),
+        isPinned: false,
+        replies: [],
+        isEdited: reply.isEdited,
+        editedAt: reply.editedAt?.toISOString()
+      })) || [],
+      isEdited: message.isEdited,
+      editedAt: message.editedAt?.toISOString()
+    }));
 
-    const total = await DiscussionMessage.countDocuments(query);
-
-    res.json({
-      messages,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      total
-    });
+    res.json(transformedMessages);
   } catch (error) {
-    console.error('Error fetching messages:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -49,53 +123,69 @@ export const getEventMessages = async (req, res) => {
 export const createMessage = async (req, res) => {
   try {
     const { eventId } = req.params;
-    const { content, parentMessageId, mentions } = req.body;
-    const authorId = req.user?.id; // Assuming auth middleware sets req.user
+    const { content, authorId, parentMessageId } = req.body;
 
-    if (!authorId) {
-      return res.status(401).json({ message: 'Authentication required' });
+    if (!content?.trim()) {
+      return res.status(400).json({ error: "Message content is required" });
     }
 
-    // Validate event exists
-    const event = await Event.findById(eventId);
-    if (!event) {
-      return res.status(404).json({ message: 'Event not found' });
+    // Check if user exists (in a real app, you'd get this from auth middleware)
+    const author = await User.findById(authorId);
+    if (!author) {
+      return res.status(404).json({ error: "User not found" });
     }
 
-    // Validate parent message if replying
-    let parentMessage = null;
-    if (parentMessageId) {
-      parentMessage = await DiscussionMessage.findById(parentMessageId);
-      if (!parentMessage || parentMessage.event.toString() !== eventId) {
-        return res.status(400).json({ message: 'Invalid parent message' });
-      }
+    // Find or create discussion
+    let discussion = await Discussion.findOne({ event: eventId });
+    if (!discussion) {
+      discussion = new Discussion({ event: eventId, messages: [] });
+      await discussion.save();
     }
 
-    const messageData = {
-      event: eventId,
-      author: authorId,
+    // Create the message
+    const message = new Message({
       content: content.trim(),
-      parentMessage: parentMessageId || null,
-      mentions: mentions || []
+      author: authorId,
+      parentMessage: parentMessageId || undefined,
+      reactions: []
+    });
+
+    await message.save();
+    await message.populate('author', 'name avatar initials');
+
+    // If it's a reply, add to parent's replies array
+    if (parentMessageId) {
+      await Message.findByIdAndUpdate(parentMessageId, {
+        $push: { replies: message._id }
+      });
+    } else {
+      // Add to discussion messages if it's a top-level message
+      discussion.messages.push(message._id);
+      await discussion.save();
+    }
+
+    // Transform response to match frontend format
+    const transformedMessage = {
+      id: message._id.toString(),
+      author: {
+        id: message.author._id.toString(),
+        name: message.author.name,
+        avatar: message.author.avatar || '',
+        initials: message.author.initials || message.author.name.charAt(0).toUpperCase()
+      },
+      content: message.content,
+      timestamp: message.createdAt.toISOString(),
+      reactions: [],
+      isOrganizer: false, // You'd need to check against event organizer
+      isPinned: false,
+      replies: [],
+      isEdited: false
     };
 
-    const message = new DiscussionMessage(messageData);
-    await message.save();
-
-    // If this is a reply, add to parent's replies array
-    if (parentMessage) {
-      parentMessage.replies.push(message._id);
-      await parentMessage.save();
-    }
-
-    // Populate the message before sending
-    await message.populate('author', 'firstName lastName avatar');
-    await message.populate('mentions', 'firstName lastName');
-
-    res.status(201).json(message);
+    res.status(201).json(transformedMessage);
   } catch (error) {
-    console.error('Error creating message:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error("Error creating message:", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -103,40 +193,54 @@ export const createMessage = async (req, res) => {
 export const updateMessage = async (req, res) => {
   try {
     const { messageId } = req.params;
-    const { content } = req.body;
-    const userId = req.user?.id;
+    const { content, userId } = req.body;
 
-    const message = await DiscussionMessage.findById(messageId);
+    if (!content?.trim()) {
+      return res.status(400).json({ error: "Message content is required" });
+    }
+
+    const message = await Message.findById(messageId).populate('author', 'name avatar initials');
     if (!message) {
-      return res.status(404).json({ message: 'Message not found' });
+      return res.status(404).json({ error: "Message not found" });
     }
 
-    // Check if user is the author
-    if (message.author.toString() !== userId) {
-      return res.status(403).json({ message: 'Not authorized to edit this message' });
-    }
-
-    if (message.isDeleted) {
-      return res.status(400).json({ message: 'Cannot edit deleted message' });
-    }
-
-    // Add to edit history
-    if (message.content !== content.trim()) {
-      message.editHistory.push({
-        content: message.content,
-        editedAt: new Date()
-      });
-      message.isEdited = true;
+    // Check if user owns the message (in real app, use auth middleware)
+    if (message.author._id.toString() !== userId) {
+      return res.status(403).json({ error: "Not authorized to edit this message" });
     }
 
     message.content = content.trim();
+    message.isEdited = true;
+    message.editedAt = new Date();
     await message.save();
 
-    await message.populate('author', 'firstName lastName avatar');
-    res.json(message);
+    // Transform response
+    const transformedMessage = {
+      id: message._id.toString(),
+      author: {
+        id: message.author._id.toString(),
+        name: message.author.name,
+        avatar: message.author.avatar || '',
+        initials: getInitials(message.author.name)
+      },
+      content: message.content,
+      timestamp: message.createdAt.toISOString(),
+      reactions: message.reactions.map(r => ({
+        emoji: r.emoji,
+        users: r.users.map(u => u.toString()),
+        count: r.count
+      })),
+      isOrganizer: false,
+      isPinned: message.isPinned,
+      replies: [],
+      isEdited: true,
+      editedAt: message.editedAt.toISOString()
+    };
+
+    res.json(transformedMessage);
   } catch (error) {
-    console.error('Error updating message:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error("Error updating message:", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -144,27 +248,38 @@ export const updateMessage = async (req, res) => {
 export const deleteMessage = async (req, res) => {
   try {
     const { messageId } = req.params;
-    const userId = req.user?.id;
+    const { userId } = req.body;
 
-    const message = await DiscussionMessage.findById(messageId);
+    const message = await Message.findById(messageId);
     if (!message) {
-      return res.status(404).json({ message: 'Message not found' });
+      return res.status(404).json({ error: "Message not found" });
     }
 
-    // Check if user is the author or event organizer
-    const event = await Event.findById(message.event);
-    const isAuthor = message.author.toString() === userId;
-    const isOrganizer = event.createdBy?.toString() === userId;
-
-    if (!isAuthor && !isOrganizer) {
-      return res.status(403).json({ message: 'Not authorized to delete this message' });
+    // Check if user owns the message
+    if (message.author.toString() !== userId) {
+      return res.status(403).json({ error: "Not authorized to delete this message" });
     }
 
-    await message.softDelete(userId);
-    res.json({ message: 'Message deleted successfully' });
+    // Remove from discussion or parent message
+    if (message.parentMessage) {
+      await Message.findByIdAndUpdate(message.parentMessage, {
+        $pull: { replies: messageId }
+      });
+    } else {
+      await Discussion.updateOne(
+        { messages: messageId },
+        { $pull: { messages: messageId } }
+      );
+    }
+
+    // Delete the message and its replies
+    await Message.deleteMany({ parentMessage: messageId });
+    await Message.findByIdAndDelete(messageId);
+
+    res.json({ message: "Message deleted successfully" });
   } catch (error) {
-    console.error('Error deleting message:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error("Error deleting message:", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
 
@@ -172,155 +287,111 @@ export const deleteMessage = async (req, res) => {
 export const addReaction = async (req, res) => {
   try {
     const { messageId } = req.params;
-    const { emoji } = req.body;
-    const userId = req.user?.id;
+    const { emoji, userId } = req.body;
 
-    const message = await DiscussionMessage.findById(messageId);
+    const message = await Message.findById(messageId);
     if (!message) {
-      return res.status(404).json({ message: 'Message not found' });
+      return res.status(404).json({ error: "Message not found" });
     }
 
-    if (message.isDeleted) {
-      return res.status(400).json({ message: 'Cannot react to deleted message' });
+    const existingReaction = message.reactions.find(r => r.emoji === emoji);
+
+    if (existingReaction) {
+      const userIndex = existingReaction.users.indexOf(userId);
+      if (userIndex > -1) {
+        // Remove reaction
+        existingReaction.users.splice(userIndex, 1);
+        existingReaction.count = Math.max(0, existingReaction.count - 1);
+        
+        // Remove reaction if no users
+        if (existingReaction.count === 0) {
+          message.reactions = message.reactions.filter(r => r.emoji !== emoji);
+        }
+      } else {
+        // Add reaction
+        existingReaction.users.push(userId);
+        existingReaction.count += 1;
+      }
+    } else {
+      // New reaction
+      message.reactions.push({
+        emoji,
+        users: [userId],
+        count: 1
+      });
     }
 
-    await message.addReaction(userId, emoji);
-    await message.populate('reactions.user', 'firstName lastName');
-
-    res.json({ 
-      reactions: message.reactions,
-      reactionCounts: message.reactionCounts 
-    });
-  } catch (error) {
-    console.error('Error adding reaction:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-// Remove reaction from message
-export const removeReaction = async (req, res) => {
-  try {
-    const { messageId } = req.params;
-    const { emoji } = req.body;
-    const userId = req.user?.id;
-
-    const message = await DiscussionMessage.findById(messageId);
-    if (!message) {
-      return res.status(404).json({ message: 'Message not found' });
-    }
-
-    await message.removeReaction(userId, emoji);
-    await message.populate('reactions.user', 'firstName lastName');
-
-    res.json({ 
-      reactions: message.reactions,
-      reactionCounts: message.reactionCounts 
-    });
-  } catch (error) {
-    console.error('Error removing reaction:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-// Pin/Unpin message
-export const togglePinMessage = async (req, res) => {
-  try {
-    const { messageId } = req.params;
-    const userId = req.user?.id;
-
-    const message = await DiscussionMessage.findById(messageId);
-    if (!message) {
-      return res.status(404).json({ message: 'Message not found' });
-    }
-
-    // Check if user is event organizer
-    const event = await Event.findById(message.event);
-    if (event.createdBy?.toString() !== userId) {
-      return res.status(403).json({ message: 'Only event organizers can pin messages' });
-    }
-
-    message.isPinned = !message.isPinned;
-    message.pinnedBy = message.isPinned ? userId : null;
     await message.save();
 
-    await message.populate('author', 'firstName lastName avatar');
-    await message.populate('pinnedBy', 'firstName lastName');
-
-    res.json(message);
-  } catch (error) {
-    console.error('Error toggling pin:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-// Get message replies
-export const getMessageReplies = async (req, res) => {
-  try {
-    const { messageId } = req.params;
-    const { page = 1, limit = 20 } = req.query;
-
-    const replies = await DiscussionMessage.find({
-      parentMessage: messageId,
-      isDeleted: false
-    })
-    .populate('author', 'firstName lastName avatar')
-    .populate('reactions.user', 'firstName lastName')
-    .sort({ createdAt: 1 })
-    .limit(limit * 1)
-    .skip((page - 1) * limit)
-    .exec();
-
-    const total = await DiscussionMessage.countDocuments({
-      parentMessage: messageId,
-      isDeleted: false
-    });
-
-    res.json({
-      replies,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      total
-    });
-  } catch (error) {
-    console.error('Error fetching replies:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-// Search messages
-export const searchMessages = async (req, res) => {
-  try {
-    const { eventId } = req.params;
-    const { q, page = 1, limit = 20 } = req.query;
-
-    if (!q || q.trim().length < 2) {
-      return res.status(400).json({ message: 'Search query must be at least 2 characters' });
-    }
-
-    const searchQuery = {
-      event: eventId,
-      isDeleted: false,
-      $text: { $search: q }
+    const transformedReaction = {
+      emoji,
+      users: existingReaction ? existingReaction.users.map(u => u.toString()) : [userId],
+      count: existingReaction ? existingReaction.count : 1
     };
 
-    const messages = await DiscussionMessage.find(searchQuery)
-      .populate('author', 'firstName lastName avatar')
-      .sort({ score: { $meta: 'textScore' }, createdAt: -1 })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .exec();
+    res.json(transformedReaction);
+  } catch (error) {
+    console.error("Error adding reaction:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
 
-    const total = await DiscussionMessage.countDocuments(searchQuery);
+// Toggle pin status
+export const togglePin = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    const { userId } = req.body;
+
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    // Check if user is event organizer (simplified check)
+    message.isPinned = !message.isPinned;
+    await message.save();
+
+    res.json({ isPinned: message.isPinned });
+  } catch (error) {
+    console.error("Error toggling pin:", error);
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// Get discussion stats
+export const getDiscussionStats = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+
+    const discussion = await Discussion.findOne({ event: eventId });
+    if (!discussion) {
+      return res.json({
+        totalMessages: 0,
+        totalParticipants: 0,
+        totalReactions: 0,
+        pinnedMessages: 0
+      });
+    }
+
+    const messages = await Message.find({ _id: { $in: discussion.messages } });
+    const participants = new Set();
+    let totalReactions = 0;
+    let pinnedMessages = 0;
+
+    messages.forEach(message => {
+      participants.add(message.author.toString());
+      totalReactions += message.reactions.reduce((sum, r) => sum + r.count, 0);
+      if (message.isPinned) pinnedMessages++;
+    });
 
     res.json({
-      messages,
-      totalPages: Math.ceil(total / limit),
-      currentPage: page,
-      total,
-      query: q
+      totalMessages: messages.length,
+      totalParticipants: participants.size,
+      totalReactions,
+      pinnedMessages
     });
   } catch (error) {
-    console.error('Error searching messages:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error("Error getting stats:", error);
+    res.status(500).json({ error: "Server error" });
   }
 };
