@@ -44,17 +44,15 @@ interface EventType {
   createdBy?: string; // id de l’utilisateur organisateur
   participants?: string[]; // tableau des IDs des participants
   __v?: number; // version du document MongoDB
-}
-
-const EventsHub: React.FC = () => {
-  discussionChannel?: {
+    discussionChannel?: {
     id: string;
     messageCount: number;
     activeParticipants: number;
     lastActivity: string;
   };
+}
 
-
+const EventsHub: React.FC = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -155,9 +153,7 @@ const EventsHub: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const handleApply = (eventId: string) => {
-    console.log('Applying to event:', eventId);
-    navigate(`/event/${eventId}/book`);
+
 
     // Ici tu appelles l’API POST pour s’inscrire
   const handleApply = async (eventId: string) => {
@@ -171,6 +167,8 @@ const EventsHub: React.FC = () => {
         },
         // body: JSON.stringify({ userId: currentUserId })
       });
+            navigate(`/event/${eventId}/book`);
+
 
       if (!response.ok) {
         throw new Error('Failed to apply to event');
@@ -186,6 +184,8 @@ const EventsHub: React.FC = () => {
             : event
         )
       );
+      console.log('Applying to event:', eventId);
+      navigate(`/event/${eventId}/book`);
     } catch (error) {
       console.error('Error applying to event:', error);
     }
@@ -334,7 +334,7 @@ const EventsHub: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {filteredEvents.filter(event => event.featured).map((event, index) => (
                 <motion.div
-                  key={event._id}
+                  key={event.id}
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.1 * index }}

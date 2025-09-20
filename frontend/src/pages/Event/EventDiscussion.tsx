@@ -129,7 +129,7 @@ const EventDiscussion: React.FC = () => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
-  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Common emojis for reactions
   const commonEmojis = ['👍', '❤️', '😂', '😮', '😢', '😡', '👏', '🔥', '✨', '🎉'];

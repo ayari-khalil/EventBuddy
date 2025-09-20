@@ -26,12 +26,28 @@ const Header = () => {
 
   // Charger l'utilisateur depuis localStorage/sessionStorage
   useEffect(() => {
+    // Charger l'utilisateur au premier rendu
     const storedUser =
       JSON.parse(localStorage.getItem("user") || "null") ||
       JSON.parse(sessionStorage.getItem("user") || "null");
     setUser(storedUser);
-  }, []);
 
+    // Définir le handler pour écouter les changements d'auth
+    const handler = () => {
+      const updatedUser =
+        JSON.parse(localStorage.getItem("user") || "null") ||
+        JSON.parse(sessionStorage.getItem("user") || "null");
+      setUser(updatedUser);
+    };
+
+    // Ajouter l'écouteur personnalisé
+    window.addEventListener("authChanged", handler);
+
+    // Nettoyer l'écouteur quand le composant se démonte
+    return () => {
+      window.removeEventListener("authChanged", handler);
+    };
+  }, []);
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("token");

@@ -54,6 +54,7 @@ const handleSubmit = (e: React.FormEvent) => {
         sessionStorage.removeItem("user");
         sessionStorage.removeItem("token");
       // ✅ Sauvegarde utilisateur
+
       if (rememberMe) {
         console.log("Mémorisation de l'utilisateur en localStorage", data.user);
         localStorage.setItem("user", JSON.stringify(data.user));
@@ -68,8 +69,12 @@ const handleSubmit = (e: React.FormEvent) => {
       // ✅ Navigation selon rôle
       if (data.user.role === "admin") {
         navigate("/admindashboard", { replace: true });
+                window.dispatchEvent(new CustomEvent('authChanged', { detail: { user: data.user, token: data.token } }));
+
       } else {
         navigate("/profile", { replace: true });
+                window.dispatchEvent(new CustomEvent('authChanged', { detail: { user: data.user, token: data.token } }));
+
       }
     } else {
       setErrorMessage(data.error || "Échec de la connexion");
