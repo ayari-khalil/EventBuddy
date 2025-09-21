@@ -1,10 +1,13 @@
 import * as userService from "../services/userService.js";
 import User from "../models/User.js";
+import Event from "../models/Event.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
+
 
 dotenv.config();
 
@@ -296,3 +299,65 @@ export const removeGoal = async (req, res) => {
     res.status(500).json({ error: "Erreur lors de la suppression de l'objectif." });
   }
 };
+
+
+
+export const bookEvent = async (req, res) => {
+  try {
+    const { userId, eventId } = req.params;
+    console.log("bookEvent called with:", { userId, eventId });
+
+    // Debug check sur Event (déjà utile)
+    console.log("Event import check:", {
+      Event_type: typeof Event,
+      has_findById: Event && typeof Event.findById === "function",
+      modelName: Event && Event.modelName
+    });
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(userId) || !mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ error: "ID utilisateur ou événement invalide" });
+    }
+
+    // Récupérer user
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
+
+    // Récupérer event
+    const event = await Event.findById(eventId);
+    if (!event) return res.status(404).json({ error: "Événement non trouvé" });
+
+    // Optionnel: vérifier capacité
+    if (event.maxAttendees && typeof event.attendeesCount === "number") {
+      if (event.attendeesCount >= event.maxAttendees) {
+        return res.status(400).json({ error: "Événement complet" });
+      }
+    }
+
+    // Empêcher double réservation
+    const alreadyBooked = (user.events || []).some(e => e.toString() === eventId.toString());
+    if (alreadyBooked) {
+      return res.status(400).json({ error: "Événement déjà réservé par cet utilisateur" });
+    }
+
+    // Ajouter l'event au user
+    user.events = user.events || [];
+    user.events.push(event._id);
+    await user.save();
+
+    // Incrémenter compteur attendees si présent (optionnel)
+    if (typeof event.attendeesCount !== "undefined") {
+      event.attendeesCount = (event.attendeesCount || 0) + 1;
+      await event.save();
+    }
+
+    const populatedUser = await User.findById(userId).populate("events");
+    return res.status(200).json({ message: "Événement ajouté avec succès", user: populatedUser });
+
+  } catch (error) {
+    console.error("Erreur réservation:", error);
+    return res.status(500).json({ error: "Erreur interne du serveur" });
+  }
+};
+
+

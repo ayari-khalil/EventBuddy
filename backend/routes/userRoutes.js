@@ -1,5 +1,5 @@
 import express from "express";
-import { signupUser, loginUser, verifyEmail, forgotPassword, resetPassword, getUserById, updateUser, uploadProfileImage, addInterest, removeGoal, addGoal, removeInterest } from "../controllers/userController.js";
+import { signupUser, loginUser, verifyEmail, forgotPassword, resetPassword, getUserById, updateUser, uploadProfileImage, addInterest, removeGoal, addGoal, removeInterest, bookEvent } from "../controllers/userController.js";
 import {
   createUser,
   getUserByEmail,
@@ -35,6 +35,9 @@ router.post("/remove-interest", removeInterest);
 // Goals
 router.post("/add-goal", addGoal);
 router.post("/remove-goal", removeGoal);
+
+router.post("/:userId/bookEvent/:eventId", bookEvent);
+
 
 
 router.post("/", async (req, res) => {

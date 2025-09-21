@@ -17,6 +17,8 @@ const ProfilePage = () => {
     goals: [] as string[],
     joinDate: "",
     matches: [] as string[],
+    events: [] as string[],
+    
 
   });
 
@@ -44,6 +46,7 @@ useEffect(() => {
             year: "numeric",
           }),
         matches: parsedUser.matches || [],
+        events: parsedUser.events || [],
         });
       } catch (error) {
         console.error("Erreur lors du parsing des données utilisateur :", error);

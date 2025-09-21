@@ -1,125 +1,151 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Calendar, MapPin, Users, Clock, Star, Eye, MessageCircle, UserPlus, Award, TrendingUp, Target, Filter, Plus } from 'lucide-react';
 
-const MyEvents = () => {
-  const [activeTab, setActiveTab] = useState<'upcoming' | 'past' | 'applied'>('upcoming');
+type EventType = {
+  id: number | string;
+  title: string;
+  date: string; // ISO
+  time?: string;
+  location?: string;
+  status?: string;
+  attendees?: number;
+  myConnections?: number;
+  newMatches?: number;
+  image?: string;
+  organizer?: string;
+  myRole?: string;
+  applicationDate?: string;
+  waitlistPosition?: number;
+  talkTitle?: string;
+  proposedTalk?: string;
+  rating?: number; // 1-5
+  achievements?: string[];
+  feedback?: string;
+  connectionsMode?: number; // number of connections made
+  // appliedAs?: string; // e.g. Speaker, Attendee
+  appliedAs?: 'Speaker' | 'Attendee' | 'Panelist' | 'Volunteer' | 'Sponsor' | 'Exhibitor'; // etc.
+  // ... other fields possible
+};
 
-  const upcomingEvents = [
-    {
-      id: 1,
-      title: "AI Revolution Summit 2025",
-      date: "15 Mars 2025",
-      time: "09:00 - 18:00",
-      location: "Station F, Paris",
-      status: "confirmed",
-      attendees: 1200,
-      myConnections: 12,
-      newMatches: 5,
-      image: "https://images.pexels.com/photos/2747449/pexels-photo-2747449.jpeg?auto=compress&cs=tinysrgb&w=400",
-      organizer: "AI France",
-      myRole: "Speaker",
-      talkTitle: "L'avenir de l'IA dans la Fintech"
-    },
-    {
-      id: 2,
-      title: "Startup Grind Paris",
-      date: "22 Mars 2025",
-      time: "18:00 - 22:00",
-      location: "WeWork Opéra, Paris",
-      status: "confirmed",
-      attendees: 300,
-      myConnections: 8,
-      newMatches: 3,
-      image: "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&w=400",
-      organizer: "Startup Grind",
-      myRole: "Attendee"
+const MyEvents: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<"upcoming" | "past" | "applied">("upcoming");
+  const [user, setUser] = useState<any>(null);
+  const [events, setEvents] = useState<EventType[]>([]);
+
+  // Charger user et events depuis localStorage/sessionStorage
+useEffect(() => {
+  const storedUser =
+    JSON.parse(localStorage.getItem("user") || "null") ||
+    JSON.parse(sessionStorage.getItem("user") || "null");
+  setUser(storedUser);
+  console.log("Chargement de l'utilisateur depuis localStorage/sessionStorage", storedUser);
+
+  const storedEvents = JSON.parse(localStorage.getItem("events") || "null");
+  console.log("Chargement des events depuis localStorage/sessionStorage", storedEvents, storedUser);
+
+  if (storedEvents && Array.isArray(storedEvents)) {
+    // Si les events complets sont dans localStorage
+    // on filtre seulement ceux que l'utilisateur a bookés
+    const userEventIds = storedUser?.events || [];
+    const filteredEvents = storedEvents.filter((e: any) =>
+      userEventIds.includes(e._id)
+    );
+    setEvents(filteredEvents);
+    console.log("Events filtrés pour l'utilisateur:", filteredEvents);
+
+  } else if (storedUser?.events && Array.isArray(storedUser.events)) {
+    // fallback: user.events contient seulement des IDs → fetch API pour récupérer les events
+    const fetchUserEvents = async () => {
+      try {
+        const eventIds = storedUser.events;
+        const fetchedEvents = await Promise.all(
+          eventIds.map(async (id: string) => {
+            console.log("Fetching event details for ID:", id);
+            const res = await fetch(`http://localhost:5000/api/events/${id}`);
+            return await res.json();
+          })
+        );
+        setEvents(fetchedEvents);
+        console.log("Events récupérés depuis le backend:", fetchedEvents);
+      } catch (err) {
+        console.error("Erreur récupération events by id:", err);
+      }
+    };
+    fetchUserEvents();
+
+  } else {
+    setEvents([]); // aucun évènement trouvé
+  }
+}, []);
+
+  // helper: parse date (returns Date object)
+  const parseDate = (d?: string) => {
+    if (!d) return null;
+    const dt = new Date(d);
+    return isNaN(dt.getTime()) ? null : dt;
+  };
+
+  const now = useMemo(() => new Date(), []);
+
+  // Filtrage dynamique
+  const upcomingEvents = useMemo(() => {
+    return events.filter(ev => {
+      const evDate = parseDate(ev.date);
+      if (!evDate) return false;
+      // upcoming: date future AND status not completed
+      return evDate >= now && (ev.status ? ev.status !== "completed" : true);
+    }).sort((a,b) => parseDate(a.date)!.getTime() - parseDate(b.date)!.getTime());
+  }, [events, now]);
+
+  const pastEvents = useMemo(() => {
+    return events.filter(ev => {
+      const evDate = parseDate(ev.date);
+      if (!evDate) return false;
+      // past: date in past OR status === completed
+      return evDate < now || ev.status === "completed";
+    }).sort((a,b) => parseDate(b.date)!.getTime() - parseDate(a.date)!.getTime());
+  }, [events, now]);
+
+  const appliedEvents = useMemo(() => {
+    // Strategy: if user.events contains applied event ids, filter by those ids,
+    // otherwise filter events with status 'pending' or 'waitlist' or that have applicationDate.
+    const userEventIds: (number|string)[] = user?.events ?? [];
+    if (userEventIds.length > 0) {
+      return events.filter(ev => userEventIds.includes(ev.id));
     }
-  ];
+    return events.filter(ev =>
+      ["pending", "waitlist"].includes(ev.status || "") || !!ev.applicationDate
+    ).sort((a,b) => (parseDate(a.applicationDate || a.date)?.getTime() ?? 0) - (parseDate(b.applicationDate || b.date)?.getTime() ?? 0));
+  }, [events, user]);
 
-  const pastEvents = [
-    {
-      id: 3,
-      title: "Tech Innovation Meetup",
-      date: "10 Février 2025",
-      time: "19:00 - 22:00",
-      location: "Google Campus, Paris",
-      status: "completed",
-      attendees: 150,
-      connectionsMade: 7,
-      rating: 4.8,
-      image: "https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=400",
-      organizer: "Tech Paris",
-      myRole: "Attendee",
-      feedback: "Excellent événement, j'ai rencontré des personnes très intéressantes !",
-      achievements: ["Super Networker", "Early Bird"]
-    },
-    {
-      id: 4,
-      title: "Blockchain Conference 2025",
-      date: "25 Janvier 2025",
-      time: "10:00 - 17:00",
-      location: "Palais des Congrès, Paris",
-      status: "completed",
-      attendees: 800,
-      connectionsMode: 12,
-      rating: 4.5,
-      image: "https://images.pexels.com/photos/3184339/pexels-photo-3184339.jpeg?auto=compress&cs=tinysrgb&w=400",
-      organizer: "Blockchain France",
-      myRole: "Panelist",
-      talkTitle: "DeFi et l'avenir de la finance",
-      achievements: ["Expert Speaker", "Top Networker"]
-    }
-  ];
-
-  const appliedEvents = [
-    {
-      id: 5,
-      title: "Future of Work Summit",
-      date: "12 Avril 2025",
-      time: "09:30 - 16:30",
-      location: "La Défense Arena, Paris",
-      status: "pending",
-      attendees: 600,
-      applicationDate: "5 Mars 2025",
-      image: "https://images.pexels.com/photos/3184291/pexels-photo-3184291.jpeg?auto=compress&cs=tinysrgb&w=400",
-      organizer: "Future Work Institute",
-      appliedAs: "Speaker",
-      proposedTalk: "IA et transformation du travail"
-    },
-    {
-      id: 6,
-      title: "Women in Tech Meetup",
-      date: "18 Avril 2025",
-      time: "19:00 - 22:00",
-      location: "Google Campus, Paris",
-      status: "waitlist",
-      attendees: 150,
-      applicationDate: "1 Mars 2025",
-      image: "https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&w=400",
-      organizer: "Women in Tech Paris",
-      appliedAs: "Attendee",
-      waitlistPosition: 15
-    }
-  ];
-
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status?: string) => {
     switch (status) {
-      case 'confirmed': return 'from-green-500 to-blue-500';
-      case 'pending': return 'from-yellow-500 to-orange-500';
-      case 'waitlist': return 'from-purple-500 to-pink-500';
-      case 'completed': return 'from-gray-500 to-gray-600';
-      default: return 'from-blue-500 to-purple-500';
+      case "confirmed":
+        return "from-green-500 to-blue-500";
+      case "pending":
+        return "from-yellow-500 to-orange-500";
+      case "waitlist":
+        return "from-purple-500 to-pink-500";
+      case "completed":
+        return "from-gray-500 to-gray-600";
+      default:
+        return "from-blue-500 to-purple-500";
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status?: string) => {
     switch (status) {
-      case 'confirmed': return 'Confirmé';
-      case 'pending': return 'En attente';
-      case 'waitlist': return 'Liste d\'attente';
-      case 'completed': return 'Terminé';
-      default: return status;
+      case "confirmed":
+        return "Confirmé";
+      case "pending":
+        return "En attente";
+      case "waitlist":
+        return "Liste d'attente";
+      case "completed":
+        return "Terminé";
+      default:
+        return status ?? "";
     }
   };
 

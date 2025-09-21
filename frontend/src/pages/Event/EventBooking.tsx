@@ -170,31 +170,67 @@ const EventBooking = () => {
     fetchEvent();
   }, [eventId]);
 
-  const handleBooking = async () => {
-    if (!bookingData.agreeToTerms) {
-      alert('Veuillez accepter les conditions générales');
+const handleBooking = async (eventId: string | number) => {
+  if (!bookingData.agreeToTerms) {
+    alert('Veuillez accepter les conditions générales');
+    return;
+  }
+
+  setIsBooking(true);
+
+  try {
+    // Récupérer userId et token depuis storage (local ou session)
+    const storedUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || 'null');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || null;
+    if (!storedUser || !storedUser._id) {
+      throw new Error('Utilisateur non authentifié');
+    }
+    const userId = storedUser._id;
+    console.log('Réservation pour userId:', userId, 'eventId:', eventId);
+
+    const res = await fetch(`http://localhost:5000/api/users/${userId}/bookEvent/${eventId}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      // body optionnel si tu veux envoyer d'autres infos, ex: pass role/application info
+      // body: JSON.stringify({ appliedAs: bookingData.role })
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      // Affiche l'erreur renvoyée par le backend (si existante)
+      console.error('Erreur backend:', data);
+      alert(data.error || 'Erreur lors de la réservation');
       return;
     }
 
-    setIsBooking(true);
-    
-    try {
-      // Simuler l'appel API de réservation
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setShowConfirmation(true);
-      
-      // Redirection après confirmation
-      setTimeout(() => {
-        navigate('/my-events');
-      }, 3000);
-      
-    } catch (error) {
-      console.error('Erreur lors de la réservation:', error);
-    } finally {
-      setIsBooking(false);
+    // Succès
+    setShowConfirmation(true);
+
+    // Optionnel : mettre à jour le local state / localStorage pour refléter la nouvelle réservation
+    // par ex. ajouter eventId à la liste user.events si tu gères localement
+    const updatedUser = { ...storedUser };
+    if (!updatedUser.events) updatedUser.events = [];
+    if (!updatedUser.events.includes(eventId)) {
+      updatedUser.events.push(eventId);
+      // mettre à jour storage (si tu veux persister)
+      if (localStorage.getItem('user')) localStorage.setItem('user', JSON.stringify(updatedUser));
+      else sessionStorage.setItem('user', JSON.stringify(updatedUser));
     }
-  };
+
+    // Redirection après confirmation (ex: 3s)
+    setTimeout(() => navigate('/my-events'), 3000);
+
+  } catch (error: any) {
+    console.error('Erreur lors de la réservation:', error);
+    alert(error.message || 'Erreur lors de la réservation');
+  } finally {
+    setIsBooking(false);
+  }
+};
 
   if (loading) {
     return (
@@ -694,8 +730,9 @@ const EventBooking = () => {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  onClick={handleBooking}
-                  disabled={isBooking || !bookingData.agreeToTerms}
+  onClick={() => {
+    if (eventId) handleBooking(eventId);
+  }}                  disabled={isBooking || !bookingData.agreeToTerms}
                   className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   {isBooking ? (
