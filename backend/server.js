@@ -9,9 +9,11 @@ import matchRoutes from "./routes/matchRoutes.js";
 import eventRoutes from "./routes/eventRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
+import directMessageRoutes from "./routes/directMessagesRoutes.js";
 
 // Socket
 import { initializeSocket } from "./socket/discussionSocket.js";
+import { initializeDirectMessageSocket } from "./socket/directMessageSocket.js";
 
 dotenv.config();
 
@@ -37,6 +39,7 @@ app.use("/api/matches", matchRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/messages", messageRoutes);
+
 
 // MongoDB connection
 mongoose
