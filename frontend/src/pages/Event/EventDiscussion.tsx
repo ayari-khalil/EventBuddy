@@ -75,43 +75,6 @@ const EventDiscussionPage = () => {
     }
   }, [eventId]);
 
-// Simple motion component replacement
-const Motion: React.FC<{ 
-  children: React.ReactNode; 
-  className?: string; 
-  initial?: any; 
-  animate?: any; 
-  exit?: any; 
-  transition?: any; 
-  [key: string]: any; 
-}> = ({ children, className = '', ...props }) => (
-  <div className={`transition-all duration-300 ${className}`} {...props}>
-    {children}
-  </div>
-);
-
-const EventDiscussion: React.FC = () => {
-  const { socket, isConnected, activeUsers, typingUsers } = useSocket();
-  
-  const [event, setEvent] = useState<Event | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [newMessage, setNewMessage] = useState('');
-  const [replyingTo, setReplyingTo] = useState<string | null>(null);
-  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState<string | null>(null);
-  const [soundEnabled, setSoundEnabled] = useState(true);
-  const [expandedReplies, setExpandedReplies] = useState<Set<string>>(new Set());
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messageInputRef = useRef<HTMLInputElement>(null);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // Common emojis for reactions
-  const commonEmojis = ['👍', '❤️', '😂', '😮', '😢', '😡', '👏', '🔥', '✨', '🎉'];
-
-  // Mock data initialization
   // Socket connection
   useEffect(() => {
     if (!eventId || !currentUser?._id || loading || userLoading) return;
