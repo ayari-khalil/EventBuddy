@@ -1,335 +1,293 @@
 // socket/discussionSocket.js
-import { Server } from 'socket.io';
-import DiscussionMessage from '../models/DiscussionMessage.js';
-import Event from '../models/Event.js';
+import { Server } from "socket.io";
+import Discussion from "../models/Discussion.js";
+import Message from "../models/Message.js";
+import Event from "../models/Event.js";
+
+let io;
 
 export const initializeSocket = (server) => {
-  const io = new Server(server, {
+  io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || "http://localhost:3000",
+      origin: "http://localhost:5173",
       methods: ["GET", "POST"],
       credentials: true
     }
   });
 
-  // Store active users in event rooms
-  const activeUsers = new Map(); // eventId -> Set of userIds
-  const userSockets = new Map(); // userId -> socketId
+  io.on("connection", (socket) => {
+    console.log(`User connected: ${socket.id}`);
 
-  io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
+    // Initialize storage for multiple events
+    socket.userId = null;
+    socket.eventIds = [];
 
-    // Join event discussion room
-    socket.on('join_event_discussion', async (data) => {
+    // Join discussion
+    socket.on("join_discussion", async (data) => {
       try {
-        const { eventId, userId, userInfo } = data;
-        
-        // Validate event exists
-        const event = await Event.findById(eventId);
-        if (!event) {
-          socket.emit('error', { message: 'Event not found' });
+        const { userId, eventId } = data;
+
+        if (!userId || !eventId) {
+          socket.emit("error", { message: "Missing userId or eventId" });
           return;
         }
 
-        // Join the room
-        socket.join(`event_${eventId}`);
-        socket.eventId = eventId;
-        socket.userId = userId;
-        socket.userInfo = userInfo;
+        // Save userId if not already stored
+        if (!socket.userId) socket.userId = userId;
 
-        // Track active users
-        if (!activeUsers.has(eventId)) {
-          activeUsers.set(eventId, new Set());
+        // Join event room only once
+        if (!socket.eventIds.includes(eventId)) {
+          socket.eventIds.push(eventId);
+          socket.join(`event_${eventId}`);
         }
-        activeUsers.get(eventId).add(userId);
-        userSockets.set(userId, socket.id);
 
-        // Notify others about new user joining
-        socket.to(`event_${eventId}`).emit('user_joined', {
-          userId,
-          userInfo,
-          timestamp: new Date().toISOString()
+        // Find or create discussion
+        let discussion = await Discussion.findOne({ eventId });
+        if (!discussion) {
+          discussion = await Discussion.create({ eventId, messageCount: 0 });
+        }
+
+        await discussion.addActiveUser(userId);
+        await discussion.populate("activeUsers.user", "name email profileImage");
+
+        // Broadcast active users
+        const activeUsers = discussion.activeUsers.filter(
+          (u) => u.lastSeen > new Date(Date.now() - 5 * 60 * 1000)
+        );
+
+        io.to(`event_${eventId}`).emit("active_users_update", {
+          activeUsers: activeUsers.map((u) => ({
+            _id: u.user._id,
+            name: u.user.name,
+            email: u.user.email,
+            profileImage: u.user.profileImage,
+            isTyping: u.isTyping,
+            lastSeen: u.lastSeen
+          }))
         });
 
-        // Send current active users count
-        const activeCount = activeUsers.get(eventId).size;
-        io.to(`event_${eventId}`).emit('active_users_count', { count: activeCount });
+        // Send last 50 messages
+        const messages = await Message.find({ eventId })
+          .sort({ createdAt: -1 })
+          .limit(50)
+          .populate("author", "name email profileImage")
+          .populate("reactions.users", "name");
 
-        console.log(`User ${userId} joined event ${eventId} discussion`);
+        socket.emit("discussion_joined", {
+          messages: messages.reverse(),
+          discussion: {
+            _id: discussion._id,
+            messageCount: discussion.messageCount,
+            settings: discussion.settings
+          }
+        });
+
+        console.log(`User ${userId} joined discussion for event ${eventId}`);
       } catch (error) {
-        console.error('Error joining discussion:', error);
-        socket.emit('error', { message: 'Failed to join discussion' });
+        console.error("Error joining discussion:", error);
+        socket.emit("error", { message: "Failed to join discussion" });
       }
     });
 
     // Send message
-    socket.on('send_message', async (data) => {
+    socket.on("send_message", async (data) => {
       try {
-        const { eventId, content, parentMessageId, mentions } = data;
-        const { userId, userInfo } = socket;
+        const { eventId, userId, content, parentMessageId } = data;
 
-        if (!eventId || !userId) {
-          socket.emit('error', { message: 'Missing required data' });
+        if (!content || !content.trim()) {
+          socket.emit("error", { message: "Message content is required" });
           return;
         }
 
-        // Create message in database
-        const messageData = {
-          event: eventId,
+        const message = new Message({
+          eventId,
           author: userId,
           content: content.trim(),
-          parentMessage: parentMessageId || null,
-          mentions: mentions || []
-        };
+          parentMessage: parentMessageId || null
+        });
 
-        const message = new DiscussionMessage(messageData);
         await message.save();
+        await message.populate("author", "name email profileImage");
 
-        // If replying, update parent message
-        if (parentMessageId) {
-          const parentMessage = await DiscussionMessage.findById(parentMessageId);
-          if (parentMessage) {
-            parentMessage.replies.push(message._id);
-            await parentMessage.save();
-          }
+        // Update discussion stats
+        const discussion = await Discussion.findOne({ eventId });
+        if (discussion) {
+          discussion.messageCount += 1;
+          discussion.lastActivity = new Date();
+          await discussion.save();
         }
 
-        // Populate message data for broadcasting
-        await message.populate('author', 'firstName lastName avatar');
-        
-        const messageForBroadcast = {
-          id: message._id,
-          author: userInfo,
-          content: message.content,
-          timestamp: message.createdAt,
-          parentMessage: parentMessageId,
-          reactions: [],
-          replies: [],
-          isPinned: false,
-          isEdited: false
-        };
+        if (parentMessageId) {
+          await Message.findByIdAndUpdate(parentMessageId, {
+            $push: { replies: message._id }
+          });
+        }
 
-        // Broadcast to all users in the event room
-        io.to(`event_${eventId}`).emit('new_message', messageForBroadcast);
-
-        // Send confirmation to sender
-        socket.emit('message_sent', { messageId: message._id });
+        io.to(`event_${eventId}`).emit("new_message", {
+          message: {
+            _id: message._id,
+            content: message.content,
+            author: message.author,
+            createdAt: message.createdAt,
+            reactions: message.reactions,
+            parentMessage: message.parentMessage,
+            replies: message.replies,
+            isEdited: message.isEdited,
+            isPinned: message.isPinned
+          }
+        });
 
         console.log(`Message sent in event ${eventId} by user ${userId}`);
       } catch (error) {
-        console.error('Error sending message:', error);
-        socket.emit('error', { message: 'Failed to send message' });
+        console.error("Error sending message:", error);
+        socket.emit("error", { message: "Failed to send message" });
+      }
+    });
+
+    // Typing indicator
+    socket.on("typing", async (data) => {
+      try {
+        const { eventId, userId, isTyping } = data;
+        const discussion = await Discussion.findOne({ eventId });
+
+        if (discussion) {
+          await discussion.updateTypingStatus(userId, isTyping);
+          socket.to(`event_${eventId}`).emit("user_typing", { userId, isTyping });
+        }
+      } catch (error) {
+        console.error("Error updating typing status:", error);
       }
     });
 
     // Add reaction
-    socket.on('add_reaction', async (data) => {
+    socket.on("add_reaction", async (data) => {
       try {
-        const { messageId, emoji } = data;
-        const { userId, userInfo } = socket;
+        const { messageId, emoji, userId } = data;
+        const message = await Message.findById(messageId);
 
-        if (!messageId || !emoji || !userId) {
-          socket.emit('error', { message: 'Missing required data' });
-          return;
-        }
-
-        const message = await DiscussionMessage.findById(messageId);
         if (!message) {
-          socket.emit('error', { message: 'Message not found' });
+          socket.emit("error", { message: "Message not found" });
           return;
         }
 
-        await message.addReaction(userId, emoji);
-        await message.populate('reactions.user', 'firstName lastName');
-
-        // Broadcast reaction update
-        io.to(`event_${message.event}`).emit('reaction_updated', {
-          messageId: message._id,
-          reactions: message.reactions,
-          reactionCounts: message.reactionCounts,
-          updatedBy: userInfo
-        });
-
-        console.log(`Reaction ${emoji} added to message ${messageId} by user ${userId}`);
-      } catch (error) {
-        console.error('Error adding reaction:', error);
-        socket.emit('error', { message: 'Failed to add reaction' });
-      }
-    });
-
-    // Remove reaction
-    socket.on('remove_reaction', async (data) => {
-      try {
-        const { messageId, emoji } = data;
-        const { userId, userInfo } = socket;
-
-        const message = await DiscussionMessage.findById(messageId);
-        if (!message) {
-          socket.emit('error', { message: 'Message not found' });
-          return;
+        let reaction = message.reactions.find((r) => r.emoji === emoji);
+        if (reaction) {
+          if (reaction.users.includes(userId)) {
+            reaction.users = reaction.users.filter(
+              (id) => id.toString() !== userId.toString()
+            );
+            reaction.count = reaction.users.length;
+            if (reaction.count === 0) {
+              message.reactions = message.reactions.filter((r) => r.emoji !== emoji);
+            }
+          } else {
+            reaction.users.push(userId);
+            reaction.count = reaction.users.length;
+          }
+        } else {
+          message.reactions.push({ emoji, users: [userId], count: 1 });
         }
 
-        await message.removeReaction(userId, emoji);
-        await message.populate('reactions.user', 'firstName lastName');
-
-        // Broadcast reaction update
-        io.to(`event_${message.event}`).emit('reaction_updated', {
-          messageId: message._id,
-          reactions: message.reactions,
-          reactionCounts: message.reactionCounts,
-          updatedBy: userInfo
-        });
-
-        console.log(`Reaction ${emoji} removed from message ${messageId} by user ${userId}`);
-      } catch (error) {
-        console.error('Error removing reaction:', error);
-        socket.emit('error', { message: 'Failed to remove reaction' });
-      }
-    });
-
-    // User typing indicator
-    socket.on('typing_start', (data) => {
-      const { eventId } = data;
-      const { userId, userInfo } = socket;
-      
-      if (eventId && userId) {
-        socket.to(`event_${eventId}`).emit('user_typing', {
-          userId,
-          userInfo,
-          isTyping: true
-        });
-      }
-    });
-
-    socket.on('typing_stop', (data) => {
-      const { eventId } = data;
-      const { userId, userInfo } = socket;
-      
-      if (eventId && userId) {
-        socket.to(`event_${eventId}`).emit('user_typing', {
-          userId,
-          userInfo,
-          isTyping: false
-        });
-      }
-    });
-
-    // Edit message
-    socket.on('edit_message', async (data) => {
-      try {
-        const { messageId, newContent } = data;
-        const { userId, userInfo } = socket;
-
-        const message = await DiscussionMessage.findById(messageId);
-        if (!message) {
-          socket.emit('error', { message: 'Message not found' });
-          return;
-        }
-
-        if (message.author.toString() !== userId) {
-          socket.emit('error', { message: 'Not authorized to edit this message' });
-          return;
-        }
-
-        // Add to edit history
-        if (message.content !== newContent.trim()) {
-          message.editHistory.push({
-            content: message.content,
-            editedAt: new Date()
-          });
-          message.isEdited = true;
-        }
-
-        message.content = newContent.trim();
         await message.save();
+        await message.populate("reactions.users", "name");
 
-        // Broadcast message update
-        io.to(`event_${message.event}`).emit('message_updated', {
-          messageId: message._id,
-          content: message.content,
-          isEdited: message.isEdited,
-          editedBy: userInfo,
-          editedAt: new Date().toISOString()
+        io.to(`event_${message.eventId}`).emit("reaction_updated", {
+          messageId,
+          reactions: message.reactions
         });
-
-        console.log(`Message ${messageId} edited by user ${userId}`);
       } catch (error) {
-        console.error('Error editing message:', error);
-        socket.emit('error', { message: 'Failed to edit message' });
+        console.error("Error adding reaction:", error);
+        socket.emit("error", { message: "Failed to add reaction" });
       }
     });
 
-    // Delete message
-    socket.on('delete_message', async (data) => {
+    // Leave discussion (only one event at a time)
+    socket.on("leave_discussion", async (data) => {
       try {
-        const { messageId } = data;
-        const { userId, userInfo } = socket;
+        const { eventId } = data;
+        if (!eventId) return;
 
-        const message = await DiscussionMessage.findById(messageId);
-        if (!message) {
-          socket.emit('error', { message: 'Message not found' });
-          return;
+        socket.eventIds = socket.eventIds.filter((id) => id !== eventId);
+
+        const discussion = await Discussion.findOne({ eventId });
+        if (discussion) {
+          await discussion.removeActiveUser(socket.userId);
+          await discussion.populate("activeUsers.user", "name email profileImage");
+
+          const activeUsers = discussion.activeUsers.filter(
+            (u) => u.lastSeen > new Date(Date.now() - 5 * 60 * 1000)
+          );
+
+          io.to(`event_${eventId}`).emit("active_users_update", {
+            activeUsers: activeUsers.map((u) => ({
+              _id: u.user._id,
+              name: u.user.name,
+              email: u.user.email,
+              profileImage: u.user.profileImage,
+              isTyping: u.isTyping,
+              lastSeen: u.lastSeen
+            }))
+          });
         }
 
-        // Check permissions
-        const event = await Event.findById(message.event);
-        const isAuthor = message.author.toString() === userId;
-        const isOrganizer = event.createdBy?.toString() === userId;
-
-        if (!isAuthor && !isOrganizer) {
-          socket.emit('error', { message: 'Not authorized to delete this message' });
-          return;
-        }
-
-        await message.softDelete(userId);
-
-        // Broadcast message deletion
-        io.to(`event_${message.event}`).emit('message_deleted', {
-          messageId: message._id,
-          deletedBy: userInfo,
-          deletedAt: new Date().toISOString()
-        });
-
-        console.log(`Message ${messageId} deleted by user ${userId}`);
+        socket.leave(`event_${eventId}`);
+        console.log(`User ${socket.userId} left discussion for event ${eventId}`);
       } catch (error) {
-        console.error('Error deleting message:', error);
-        socket.emit('error', { message: 'Failed to delete message' });
+        console.error("Error leaving discussion:", error);
       }
     });
 
-    // Handle disconnect
-    socket.on('disconnect', () => {
-      const { eventId, userId } = socket;
-      
-      if (eventId && userId) {
-        // Remove from active users
-        if (activeUsers.has(eventId)) {
-          activeUsers.get(eventId).delete(userId);
-          if (activeUsers.get(eventId).size === 0) {
-            activeUsers.delete(eventId);
+    // Handle disconnection (leave all events)
+    socket.on("disconnect", async () => {
+      try {
+        for (const eventId of socket.eventIds) {
+          const discussion = await Discussion.findOne({ eventId });
+          if (discussion) {
+            await discussion.removeActiveUser(socket.userId);
+            await discussion.populate("activeUsers.user", "name email profileImage");
+
+            const activeUsers = discussion.activeUsers.filter(
+              (u) => u.lastSeen > new Date(Date.now() - 5 * 60 * 1000)
+            );
+
+            socket.to(`event_${eventId}`).emit("active_users_update", {
+              activeUsers: activeUsers.map((u) => ({
+                _id: u.user._id,
+                name: u.user.name,
+                email: u.user.email,
+                profileImage: u.user.profileImage,
+                isTyping: u.isTyping,
+                lastSeen: u.lastSeen
+              }))
+            });
+
+            socket.leave(`event_${eventId}`);
           }
         }
-        userSockets.delete(userId);
 
-        // Notify others about user leaving
-        socket.to(`event_${eventId}`).emit('user_left', {
-          userId,
-          timestamp: new Date().toISOString()
-        });
-
-        // Update active users count
-        const activeCount = activeUsers.get(eventId)?.size || 0;
-        socket.to(`event_${eventId}`).emit('active_users_count', { count: activeCount });
+        console.log(`User disconnected: ${socket.id}`);
+      } catch (error) {
+        console.error("Error handling disconnect:", error);
       }
-
-      console.log('User disconnected:', socket.id);
     });
   });
+
+  // Clean inactive users every 5 min
+  setInterval(async () => {
+    try {
+      const discussions = await Discussion.find({});
+      for (const discussion of discussions) {
+        await discussion.cleanInactiveUsers();
+      }
+    } catch (error) {
+      console.error("Error cleaning inactive users:", error);
+    }
+  }, 5 * 60 * 1000);
 
   return io;
 };
 
-// Helper function to get active users for an event
-export const getActiveUsers = (eventId) => {
-  return activeUsers.get(eventId) || new Set();
+export const getIO = () => {
+  if (!io) throw new Error("Socket.io not initialized!");
+  return io;
 };

@@ -1,74 +1,235 @@
+// services/eventService.js
 import Event from "../models/Event.js";
-
+import Discussion from "../models/Discussion.js";
 export const createEvent = async (eventData) => {
   try {
+    console.log("Creating event in service:", eventData);
+    
+    // Create the event
     const event = new Event(eventData);
-    return await event.save();
+    await event.save();
+    
+    // Create associated discussion
+    const discussion = new Discussion({
+      event: event._id,
+      messages: [],
+      settings: {
+        allowReactions: true,
+        allowReplies: true,
+        moderationEnabled: false
+      }
+    });
+    await discussion.save();
+    
+    console.log("Event created successfully with discussion:", event._id);
+    return event;
   } catch (error) {
-    console.error("Error creating event:", error);
-    throw new Error("Error creating event: " + error.message);
+    console.error("Service error creating event:", error);
+    throw error;
   }
 };
 
-export const getAllEvents = async () => {
+export const getAllEvents = async (query = {}) => {
   try {
-    // Remove populate if the fields don't exist in your schema
-    const events = await Event.find().sort({ createdAt: -1 });
-    console.log("Fetched events:", events.length);
+    console.log("Fetching events with query:", query);
+    
+    const {
+      category,
+      featured,
+      limit = 10,
+      page = 1,
+      sortBy = 'date',
+      sortOrder = 'desc'
+    } = query;
+    
+    // Build filter object
+    const filter = {};
+    if (category) filter.category = category;
+    if (featured !== undefined) filter.featured = featured === 'true';
+    
+    // Build sort object
+    const sort = {};
+    sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+    
+    const events = await Event.find(filter)
+      .populate('createdBy', 'name email avatar')
+      .populate('participants', 'name avatar')
+      .sort(sort)
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit));
+    
+    console.log("Successfully fetched events:", events.length);
     return events;
   } catch (error) {
-    console.error("Error fetching events:", error);
-    throw new Error("Error fetching events: " + error.message);
+    console.error("Service error fetching events:", error);
+    throw error;
   }
 };
 
-export const getEventById = async (id) => {
+export const getEventById = async (eventId) => {
   try {
-    const event = await Event.findById(id);
+    console.log("Fetching event by ID in service:", eventId);
+    
+    const event = await Event.findById(eventId)
+      .populate('createdBy', 'name email avatar bio location')
+      .populate('participants', 'name avatar bio location');
+    
     if (!event) {
-      throw new Error("Event not found");
+      throw new Error(`Event with ID ${eventId} not found`);
     }
+    
+    // Transform event data to match frontend expectations
+    const transformedEvent = {
+      id: event._id.toString(),
+      title: event.title,
+      description: event.description,
+      date: event.date.toISOString().split('T')[0], // Format as YYYY-MM-DD
+      time: event.time,
+      location: event.location,
+      category: event.category,
+      price: event.price,
+      attendees: event.participants?.length || 0,
+      maxAttendees: event.maxAttendees,
+      organizer: event.createdBy?.name || 'Unknown',
+      image: event.image,
+      tags: event.tags || [],
+      featured: event.featured,
+      createdBy: event.createdBy,
+      participants: event.participants || [],
+      createdAt: event.createdAt,
+      updatedAt: event.updatedAt
+    };
+    
+    console.log("Successfully fetched and transformed event");
+    return transformedEvent;
+  } catch (error) {
+    console.error("Service error fetching event by ID:", error);
+    throw error;
+  }
+};
+
+export const updateEvent = async (eventId, updateData) => {
+  try {
+    console.log("Updating event in service:", eventId, updateData);
+    
+    const event = await Event.findByIdAndUpdate(
+      eventId,
+      { ...updateData, updatedAt: new Date() },
+      { new: true, runValidators: true }
+    )
+    .populate('createdBy', 'name email avatar')
+    .populate('participants', 'name avatar');
+    
+    if (!event) {
+      throw new Error(`Event with ID ${eventId} not found`);
+    }
+    
+    console.log("Event updated successfully");
     return event;
   } catch (error) {
-    console.error("Error fetching event:", error);
-    throw new Error("Error fetching event: " + error.message);
+    console.error("Service error updating event:", error);
+    throw error;
   }
 };
 
-export const updateEvent = async (id, updateData) => {
+export const deleteEvent = async (eventId) => {
   try {
-    const event = await Event.findByIdAndUpdate(id, updateData, { 
-      new: true,
-      runValidators: true 
-    });
+    console.log("Deleting event in service:", eventId);
+    
+    const event = await Event.findByIdAndDelete(eventId);
+    
     if (!event) {
-      throw new Error("Event not found");
+      throw new Error(`Event with ID ${eventId} not found`);
     }
+    
+    // Also delete the associated discussion and messages
+    await Discussion.deleteOne({ event: eventId });
+    
+    console.log("Event and discussion deleted successfully");
     return event;
   } catch (error) {
-    console.error("Error updating event:", error);
-    throw new Error("Error updating event: " + error.message);
+    console.error("Service error deleting event:", error);
+    throw error;
   }
 };
 
-export const deleteEvent = async (id) => {
+export const countEvents = async (filter = {}) => {
   try {
-    const event = await Event.findByIdAndDelete(id);
+    const count = await Event.countDocuments(filter);
+    console.log("Total events counted:", count);
+    return count;
+  } catch (error) {
+    console.error("Service error counting events:", error);
+    throw error;
+  }
+};
+
+export const joinEvent = async (eventId, userId) => {
+  try {
+    console.log("User joining event:", { eventId, userId });
+    
+    const event = await Event.findById(eventId);
     if (!event) {
-      throw new Error("Event not found");
+      throw new Error(`Event with ID ${eventId} not found`);
     }
+    
+    // Check if user already joined
+    if (event.participants.includes(userId)) {
+      throw new Error("User already joined this event");
+    }
+    
+    // Check if event is full
+    if (event.participants.length >= event.maxAttendees) {
+      throw new Error("Event is full");
+    }
+    
+    event.participants.push(userId);
+    await event.save();
+    
+    console.log("User successfully joined event");
     return event;
   } catch (error) {
-    console.error("Error deleting event:", error);
-    throw new Error("Error deleting event: " + error.message);
+    console.error("Service error joining event:", error);
+    throw error;
   }
 };
 
-export const countEvents = async () => {
+export const leaveEvent = async (eventId, userId) => {
   try {
-    return await Event.countDocuments();
+    console.log("User leaving event:", { eventId, userId });
+    
+    const event = await Event.findById(eventId);
+    if (!event) {
+      throw new Error(`Event with ID ${eventId} not found`);
+    }
+    
+    // Remove user from participants
+    event.participants = event.participants.filter(
+      participantId => participantId.toString() !== userId
+    );
+    
+    await event.save();
+    
+    console.log("User successfully left event");
+    return event;
   } catch (error) {
-    console.error("Error counting events:", error);
-    throw new Error("Error counting events: " + error.message);
+    console.error("Service error leaving event:", error);
+    throw error;
+  }
+};
+
+export const getEventParticipants = async (eventId) => {
+  try {
+    const event = await Event.findById(eventId)
+      .populate('participants', 'name email avatar bio location');
+    
+    if (!event) {
+      throw new Error(`Event with ID ${eventId} not found`);
+    }
+    
+    return event.participants;
+  } catch (error) {
+    console.error("Service error getting participants:", error);
+    throw error;
   }
 };
