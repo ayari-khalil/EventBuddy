@@ -21,7 +21,16 @@ import {
   Video
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
+interface AiSuggestionResponse {
+  suggested_events: {
+    id: string;
+    title: string;
+    description: string;
+    date: string;
+    location: string;
+    featured?: boolean;
+  }[];
+}
 interface EventType {
   id: string;
   title: string;
@@ -143,15 +152,25 @@ const EventsHub: React.FC = () => {
     loadEvents();
   }, [API_BASE_URL]);
 
-  // Filter events
-  const filteredEvents = events.filter(event => {
-    const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
-    const matchesSearch =
-      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (event.tags && event.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
-    return matchesCategory && matchesSearch;
-  });
+const [filteredEvents, setAiEvents1] = useState<any[]>([]);
+
+const fetchAIEvents = async (userId: string) => {
+  try {
+    setLoading(true);
+    const res = await axios.get<AiSuggestionResponse>(
+      `http://localhost:5001/ai_suggest_events/${profileData.id}`
+    );
+    console.log("✅ Réponse de l'API IA reçue :", res.data);
+    if (res.data && res.data.suggested_events) {
+      setAiEvents1(res.data.suggested_events);
+    }
+  } catch (err) {
+    console.error("Erreur lors de la récupération des événements IA :", err);
+    setErrorAI("Impossible de charger les suggestions IA");
+  } finally {
+    setLoading(false);
+  }
+};
 
 
 
