@@ -1,47 +1,36 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Calendar, 
-  MapPin, 
-  Users, 
-  Clock, 
-  Star, 
-  Search, 
-  Heart, 
-  Zap, 
-  Target, 
-  ArrowRight, 
-  Brain, 
-  UserPlus, 
-  Sparkles, 
-  Plus, 
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Clock,
+  Star,
+  Search,
+  Heart,
+  Zap,
+  Target,
+  ArrowRight,
+  Brain,
+  UserPlus,
+  Sparkles,
+  Plus,
   MessageCircle,
   Hash,
   Phone,
   Video
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-interface AiSuggestionResponse {
-  suggested_events: {
-    id: string;
-    title: string;
-    description: string;
-    date: string;
-    location: string;
-    featured?: boolean;
-  }[];
-}
+
 interface EventType {
   id: string;
   title: string;
   description: string;
   location: string;
-  date: string; // format "YYYY-MM-DD"
-  time?: string; // ex: "22:00"
+  date: string;
+  time?: string;
   attendees: number;
   maxAttendees?: number;
   category: string;
-  price?: string; // ex: "50Dt"
+  price?: string;
   organizer?: string;
   image?: string;
   tags?: string[];
@@ -50,10 +39,10 @@ interface EventType {
   featured?: boolean;
   difficulty?: string;
   networking?: string;
-  createdBy?: string; // id de l’utilisateur organisateur
-  participants?: string[]; // tableau des IDs des participants
-  __v?: number; // version du document MongoDB
-    discussionChannel?: {
+  createdBy?: string;
+  participants?: string[];
+  __v?: number;
+  discussionChannel?: {
     id: string;
     messageCount: number;
     activeParticipants: number;
@@ -62,11 +51,12 @@ interface EventType {
 }
 
 const EventsHub: React.FC = () => {
-  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [events, setEvents] = useState<EventType[]>([]);
+  const [aiSuggestedEvents, setAiSuggestedEvents] = useState<EventType[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadingAiSuggestions, setLoadingAiSuggestions] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
 
   const categories = [
@@ -77,23 +67,106 @@ const EventsHub: React.FC = () => {
     { id: 'ai', name: 'IA', icon: Brain }
   ];
 
-  // API configuration for Vite
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  const AI_API_URL = import.meta.env.VITE_AI_API_URL || 'http://localhost:5001';
 
+  // Transform event data from API
+  const transformEvent = (event: any): EventType => ({
+    id: event._id || event.id,
+    title: event.title || '',
+    description: event.description || '',
+    date: event.date ? new Date(event.date).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric'
+    }) : '',
+    time: event.time || event.startTime,
+    location: event.location || '',
+    attendees: event.attendees?.length || event.attendeeCount || 0,
+    maxAttendees: event.maxAttendees || event.capacity,
+    category: event.category || 'tech',
+    price: event.price || event.ticketPrice || 'Gratuit',
+    organizer: event.organizer?.name || event.organizerName,
+    image: event.image || event.imageUrl || 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=800',
+    tags: event.tags || [],
+    aiMatchScore: event.aiMatchScore || event.matchScore || Math.floor(Math.random() * 30) + 70,
+    potentialMatches: event.potentialMatches || Math.floor(Math.random() * 20) + 5,
+    featured: event.featured || false,
+    difficulty: event.difficulty || 'Intermédiaire',
+    networking: event.networking || 'Modéré',
+    discussionChannel: event.discussionChannel || {
+      id: `channel_${event._id || event.id}`,
+      messageCount: Math.floor(Math.random() * 200) + 10,
+      activeParticipants: Math.floor(Math.random() * 50) + 5,
+      lastActivity: new Date(Date.now() - Math.random() * 86400000 * 3).toISOString()
+    }
+  });
+
+  // Load AI suggested events
+  useEffect(() => {
+    const loadAiSuggestions = async () => {
+      try {
+        setLoadingAiSuggestions(true);
+
+        // Get user ID from localStorage
+        const userId = localStorage.getItem('userId');
+
+        if (!userId) {
+          console.log('No user ID found in localStorage, skipping AI suggestions');
+          setLoadingAiSuggestions(false);
+          return;
+        }
+
+
+        console.log('Fetching AI suggestions from:', `${AI_API_URL}/ai_suggest_events/${userId}`);
+        const response = await fetch(`${AI_API_URL}/ai_suggest_events/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        console.log('AI suggestions response status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error response from AI API:', errorText);
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Received AI suggestions:', data);
+
+        // Transform and set AI suggested events
+const transformedSuggestions = data.suggested_events.map((event: any) => ({
+  ...transformEvent(event),
+  featured: true
+}));
+        setAiSuggestedEvents(transformedSuggestions);
+      } catch (err) {
+        console.error("Error fetching AI suggestions:", err);
+        // Don't show error to user, just skip AI suggestions
+      } finally {
+        setLoadingAiSuggestions(false);
+      }
+    };
+
+    loadAiSuggestions();
+  }, [AI_API_URL]);
+
+  // Load all events
   useEffect(() => {
     const loadEvents = async () => {
       try {
         setLoading(true);
         setError('');
-        
+
         console.log('Fetching events from:', `${API_BASE_URL}/events`);
-        
+
         const response = await fetch(`${API_BASE_URL}/events`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
-            // Add authentication headers if needed
-            // 'Authorization': `Bearer ${localStorage.getItem('token')}`
           },
         });
 
@@ -107,39 +180,8 @@ const EventsHub: React.FC = () => {
 
         const data = await response.json();
         console.log('Received data:', data);
-        
-        // Transform the data if needed to match your EventType interface
-        const transformedEvents = data.map((event: any) => ({
-          id: event._id || event.id,
-          title: event.title || '',
-          description: event.description || '',
-          date: event.date ? new Date(event.date).toLocaleDateString('fr-FR', {
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-          }) : '',
-          time: event.time || event.startTime,
-          location: event.location || '',
-          attendees: event.attendees?.length || event.attendeeCount || 0,
-          maxAttendees: event.maxAttendees || event.capacity,
-          category: event.category || 'tech',
-          price: event.price || event.ticketPrice || 'Gratuit',
-          organizer: event.organizer?.name || event.organizerName,
-          image: event.image || event.imageUrl || 'https://images.pexels.com/photos/3861969/pexels-photo-3861969.jpeg?auto=compress&cs=tinysrgb&w=800',
-          tags: event.tags || [],
-          aiMatchScore: event.aiMatchScore || Math.floor(Math.random() * 30) + 70,
-          potentialMatches: event.potentialMatches || Math.floor(Math.random() * 20) + 5,
-          featured: event.featured || false,
-          difficulty: event.difficulty || 'Intermédiaire',
-          networking: event.networking || 'Modéré',
-          discussionChannel: event.discussionChannel || {
-            id: `channel_${event._id || event.id}`,
-            messageCount: Math.floor(Math.random() * 200) + 10,
-            activeParticipants: Math.floor(Math.random() * 50) + 5,
-            lastActivity: new Date(Date.now() - Math.random() * 86400000 * 3).toISOString()
-          }
-        }));
 
+        const transformedEvents = data.map(transformEvent);
         setEvents(transformedEvents);
       } catch (err) {
         console.error("Error fetching events:", err);
@@ -152,73 +194,68 @@ const EventsHub: React.FC = () => {
     loadEvents();
   }, [API_BASE_URL]);
 
-const [filteredEvents, setAiEvents1] = useState<any[]>([]);
+  // Filter events (excluding AI suggested events from the main list)
+  const filteredEvents = events.filter(event => {
+    // Exclude events that are already in AI suggestions
+    const isInAiSuggestions = aiSuggestedEvents.some(aiEvent => aiEvent.id === event.id);
+    if (isInAiSuggestions) return false;
 
-const fetchAIEvents = async (userId: string) => {
-  try {
-    setLoading(true);
-    const res = await axios.get<AiSuggestionResponse>(
-      `http://localhost:5001/ai_suggest_events/${profileData.id}`
-    );
-    console.log("✅ Réponse de l'API IA reçue :", res.data);
-    if (res.data && res.data.suggested_events) {
-      setAiEvents1(res.data.suggested_events);
-    }
-  } catch (err) {
-    console.error("Erreur lors de la récupération des événements IA :", err);
-    setErrorAI("Impossible de charger les suggestions IA");
-  } finally {
-    setLoading(false);
-  }
-};
+    const matchesCategory = selectedCategory === 'all' || event.category === selectedCategory;
+    const matchesSearch =
+      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (event.tags && event.tags.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase())));
+    return matchesCategory && matchesSearch;
+  });
 
-
-
-    // Ici tu appelles l’API POST pour s’inscrire
   const handleApply = async (eventId: string) => {
     try {
       const response = await fetch(`${API_BASE_URL}/events/${eventId}/apply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          // Add authentication headers if needed
-          // 'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        // body: JSON.stringify({ userId: currentUserId })
       });
-            navigate(`/event/${eventId}/book`);
-
 
       if (!response.ok) {
         throw new Error('Failed to apply to event');
       }
 
       console.log('Successfully applied to event:', eventId);
-      
+
       // Update local state
-      setEvents(prevEvents => 
-        prevEvents.map(event => 
-          event.id === eventId 
+      setEvents(prevEvents =>
+        prevEvents.map(event =>
+          event.id === eventId
             ? { ...event, attendees: event.attendees + 1 }
             : event
         )
       );
-      console.log('Applying to event:', eventId);
-      navigate(`/event/${eventId}/book`);
+
+      setAiSuggestedEvents(prevEvents =>
+        prevEvents.map(event =>
+          event.id === eventId
+            ? { ...event, attendees: event.attendees + 1 }
+            : event
+        )
+      );
+
+      // Navigate to booking page
+      window.location.href = `/event/${eventId}/book`;
     } catch (error) {
       console.error('Error applying to event:', error);
     }
   };
 
   const handleJoinDiscussion = (eventId: string) => {
-    navigate(`/event/${eventId}/discussion`);
+    window.location.href = `/event/${eventId}/discussion`;
   };
 
   const formatTimeAgo = (dateString: string) => {
     const now = new Date();
     const date = new Date(dateString);
     const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
-    
+
     if (diffInHours < 1) return 'À l\'instant';
     if (diffInHours < 24) return `Il y a ${diffInHours}h`;
     const diffInDays = Math.floor(diffInHours / 24);
@@ -232,7 +269,9 @@ const fetchAIEvents = async (userId: string) => {
     window.location.reload();
   };
 
-  if (loading) {
+  const isLoading = loading || loadingAiSuggestions;
+
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
         <div className="text-center">
@@ -264,45 +303,31 @@ const fetchAIEvents = async (userId: string) => {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen"
-    >
+    <div className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 to-slate-800 min-h-screen">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          className="mb-8"
-        >
+        <div className="mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
-                Découvrez les événements 🚀
+                Découvrez les événements
               </h1>
               <p className="text-gray-400 text-lg">
                 Trouvez les événements parfaits pour votre networking grâce à notre IA
               </p>
             </div>
             <button
-              onClick={() => navigate('/create-event')}
+              onClick={() => window.location.href = '/create-event'}
               className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl flex items-center space-x-2 transition-all duration-300 shadow-lg shadow-blue-500/25"
             >
               <Plus className="w-4 h-4" />
               <span>Créer un événement</span>
             </button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Search and Filters */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1 }}
-          className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 mb-8"
-        >
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 mb-8">
           <div className="flex flex-col lg:flex-row gap-4 items-center">
             {/* Search */}
             <div className="relative flex-1">
@@ -319,10 +344,8 @@ const fetchAIEvents = async (userId: string) => {
             {/* Categories */}
             <div className="flex space-x-2 overflow-x-auto">
               {categories.map((category) => (
-                <motion.button
+                <button
                   key={category.id}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedCategory(category.id)}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-full whitespace-nowrap transition-all duration-300 ${
                     selectedCategory === category.id
@@ -332,39 +355,32 @@ const fetchAIEvents = async (userId: string) => {
                 >
                   <category.icon className="w-4 h-4" />
                   <span>{category.name}</span>
-                </motion.button>
+                </button>
               ))}
             </div>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Featured Events */}
-        {filteredEvents.some(event => event.featured) && (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="mb-8"
-          >
+        {/* AI Suggested Events (Featured) */}
+        {aiSuggestedEvents.length > 0 && (
+          <div className="mb-8">
             <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
-              <Star className="w-6 h-6 text-yellow-400 mr-2" />
-              Événements à la une
+              <Brain className="w-6 h-6 text-purple-400 mr-2" />
+              Recommandés pour vous
             </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {filteredEvents.filter(event => event.featured).map((event, index) => (
-                <motion.div
+              {aiSuggestedEvents.map((event, index) => (
+                <div
                   key={event.id}
-                  initial={{ y: 20, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  transition={{ delay: 0.1 * index }}
                   className="relative bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden hover:bg-white/10 transition-all duration-500 group"
                 >
                   <div className="absolute top-4 right-4 z-10">
-                    <div className="bg-gradient-to-r from-yellow-400 to-orange-500 text-black px-3 py-1 rounded-full text-xs font-bold">
-                      À la une
+                    <div className="bg-gradient-to-r from-purple-400 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1">
+                      <Sparkles className="w-3 h-3" />
+                      <span>Recommandé</span>
                     </div>
                   </div>
-                  
+
                   <div className="relative h-48 overflow-hidden">
                     <img
                       src={event.image}
@@ -375,7 +391,7 @@ const fetchAIEvents = async (userId: string) => {
                       }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                    
+
                     {/* AI Match Score */}
                     <div className="absolute bottom-4 left-4">
                       <div className="bg-green-500/20 backdrop-blur-sm border border-green-500/30 rounded-full px-3 py-1 flex items-center space-x-2">
@@ -447,7 +463,7 @@ const fetchAIEvents = async (userId: string) => {
                         <span className="text-blue-300 text-sm">{event.potentialMatches} matches potentiels</span>
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => handleJoinDiscussion(event.id)}
@@ -465,18 +481,14 @@ const fetchAIEvents = async (userId: string) => {
                       </button>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               ))}
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* All Events */}
-        <motion.div
-          initial={{ y: 20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3 }}
-        >
+        <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-white">
               Tous les événements ({filteredEvents.length})
@@ -484,12 +496,9 @@ const fetchAIEvents = async (userId: string) => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEvents.filter(event => !event.featured).map((event, index) => (
-              <motion.div
+            {filteredEvents.map((event, index) => (
+              <div
                 key={event.id}
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.1 * index }}
                 className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden hover:bg-white/10 transition-all duration-300 group"
               >
                 <div className="relative h-40 overflow-hidden">
@@ -502,7 +511,7 @@ const fetchAIEvents = async (userId: string) => {
                     }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                  
+
                   {/* AI Match Score */}
                   <div className="absolute top-3 right-3">
                     <div className="bg-green-500/20 backdrop-blur-sm border border-green-500/30 rounded-full px-2 py-1 flex items-center space-x-1">
@@ -523,7 +532,7 @@ const fetchAIEvents = async (userId: string) => {
                   <h3 className="text-lg font-bold text-white mb-2 group-hover:text-blue-300 transition-colors duration-300">
                     {event.title}
                   </h3>
-                  
+
                   <p className="text-gray-400 text-sm mb-3 line-clamp-2">{event.description}</p>
 
                   <div className="space-y-2 mb-4 text-xs">
@@ -586,7 +595,7 @@ const fetchAIEvents = async (userId: string) => {
                       <span className="text-blue-300 text-xs">{event.potentialMatches} matches</span>
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <button
                       onClick={() => handleJoinDiscussion(event.id)}
@@ -595,7 +604,7 @@ const fetchAIEvents = async (userId: string) => {
                       <MessageCircle className="w-3 h-3" />
                       <span className="text-sm">Rejoindre la discussion</span>
                     </button>
-                    
+
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={() => handleApply(event.id)}
@@ -604,7 +613,7 @@ const fetchAIEvents = async (userId: string) => {
                         <span>Postuler</span>
                         <ArrowRight className="w-3 h-3" />
                       </button>
-                      
+
                       {/* Quick Actions */}
                       <div className="flex space-x-1">
                         <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/20 transition-all duration-300">
@@ -617,39 +626,33 @@ const fetchAIEvents = async (userId: string) => {
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             ))}
           </div>
-        </motion.div>
+        </div>
 
         {/* No Results */}
-        {filteredEvents.length === 0 && !loading && (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            className="text-center py-12"
-          >
+        {filteredEvents.length === 0 && aiSuggestedEvents.length === 0 && !loading && (
+          <div className="text-center py-12">
             <div className="w-24 h-24 bg-gradient-to-r from-gray-500/20 to-gray-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
               <Search className="w-12 h-12 text-gray-400" />
             </div>
             <h3 className="text-xl font-semibold text-white mb-2">Aucun événement trouvé</h3>
             <p className="text-gray-400">Essayez de modifier vos critères de recherche</p>
-          </motion.div>
+          </div>
         )}
 
         {/* Floating Action Button for Mobile */}
         <div className="fixed bottom-6 right-6 lg:hidden">
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/create-event')}
+          <button
+            onClick={() => window.location.href = '/create-event'}
             className="w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-blue-500/25"
           >
             <Plus className="w-6 h-6 text-white" />
-          </motion.button>
+          </button>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

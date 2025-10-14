@@ -132,10 +132,13 @@ from flask_pymongo import PyMongo
 from bson import ObjectId
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+from flask_cors import CORS
+
 
 app = Flask(__name__)
 app.config["MONGO_URI"] = "mongodb://localhost:27017/eventbuddy"
 mongo = PyMongo(app)
+CORS(app)
 
 # --- Helper ---
 def serialize_doc(doc):
@@ -146,11 +149,13 @@ def serialize_doc(doc):
 @app.route("/ai_suggest_events/<user_id>", methods=["GET"])
 def ai_suggest_events(user_id):
     # Récupérer utilisateur
-    user = mongo.db.users.find_one({"user_id": user_id})
-    if not user:
-        return jsonify({"error": "User not found"}), 404
+    try:
+        user = mongo.db.users.find_one({"_id": ObjectId(user_id)})
+    except:
+        return jsonify({"error": "Invalid user ID format"}), 400
 
-    # Construire un profil texte pour l'utilisateur
+    if not user:
+        return jsonify({"error": f"User '{user_id}' not found"}), 404    # Construire un profil texte pour l'utilisateur
     user_text = " ".join(user.get("interests", [])) + " " + \
                 " ".join(user.get("goals", [])) + " " + \
                 (user.get("bio", "") or "")
