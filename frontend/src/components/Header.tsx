@@ -67,7 +67,7 @@ const Header = () => {
   const userNav = [
     { name: "Profil", href: "/profile", icon: User },
     { name: "Événements", href: "/events", icon: Calendar },
-    { name: "Matching", href: "/matching", icon: Users },
+    { name: "my Events", href: "/my-events", icon: Users },
     { name: "Messages", href: "/messages", icon: MessageCircle },
     { name: "Analytics", href: "/analytics", icon: BarChart3 },
     { name: "Paramètres", href: "/settings", icon: SettingsIcon },

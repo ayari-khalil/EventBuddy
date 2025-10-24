@@ -102,24 +102,77 @@ const EventsHub: React.FC = () => {
     }
   });
 
+ const [user, setUser] = useState<any | null>(null);
+
+  const [profileData, setProfileData] = useState({
+    _id: "",
+    name: "",
+    email: "",
+    bio: "",
+    location: "",
+    interests: [] as string[],
+    goals: [] as string[],
+    joinDate: "",
+    matches: [] as string[],
+    events: [] as string[],
+    
+
+  });
+
   // Load AI suggested events
   useEffect(() => {
+      const storedUser =
+      localStorage.getItem("user") || sessionStorage.getItem("user");
+      console.log("→ Données utilisateur récupérées :", storedUser);
     const loadAiSuggestions = async () => {
       try {
+
+
+
+        const parsedUser = JSON.parse(storedUser || "{}");
+        setUser(parsedUser);
+
+        // Remplir profileData avec les infos du backend
+        setProfileData({
+          _id: parsedUser._id || "",
+          name: parsedUser.name || "Nom inconnu",
+          email: parsedUser.email || "Email non renseigné",
+          bio: parsedUser.bio || "Aucune bio disponible",
+          location: parsedUser.location || "Non spécifié",
+          interests: parsedUser.interests || [],
+          goals: parsedUser.goals || [],
+          joinDate: new Date(parsedUser.createdAt).toLocaleDateString("fr-FR", {
+            month: "long",
+            year: "numeric",
+          }),
+        matches: parsedUser.matches || [],
+        events: parsedUser.events || [],
+        });
+
+
+
+
+
+
+
+
+
+
         setLoadingAiSuggestions(true);
+        console.log('Profile Data for AI suggestions:', profileData._id);
 
-        // Get user ID from localStorage
-        const userId = localStorage.getItem('userId');
 
-        if (!userId) {
+
+        if (!profileData._id) {
+
           console.log('No user ID found in localStorage, skipping AI suggestions');
           setLoadingAiSuggestions(false);
           return;
         }
 
 
-        console.log('Fetching AI suggestions from:', `${AI_API_URL}/ai_suggest_events/${userId}`);
-        const response = await fetch(`${AI_API_URL}/ai_suggest_events/${userId}`, {
+        console.log('Fetching AI suggestions from:', `${AI_API_URL}/ai_suggest_events/${profileData._id}`);
+        const response = await fetch(`${AI_API_URL}/ai_suggest_events/${profileData._id}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -210,27 +263,27 @@ const transformedSuggestions = data.suggested_events.map((event: any) => ({
 
   const handleApply = async (eventId: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/events/${eventId}/apply`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
+      // const response = await fetch(`${API_BASE_URL}/events/${eventId}/apply`, {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json',
+      //   },
+      // });
 
-      if (!response.ok) {
-        throw new Error('Failed to apply to event');
-      }
+      // if (!response.ok) {
+      //   throw new Error('Failed to apply to event');
+      // }
 
-      console.log('Successfully applied to event:', eventId);
+      // console.log('Successfully applied to event:', eventId);
 
-      // Update local state
-      setEvents(prevEvents =>
-        prevEvents.map(event =>
-          event.id === eventId
-            ? { ...event, attendees: event.attendees + 1 }
-            : event
-        )
-      );
+      // // Update local state
+      // setEvents(prevEvents =>
+      //   prevEvents.map(event =>
+      //     event.id === eventId
+      //       ? { ...event, attendees: event.attendees + 1 }
+      //       : event
+      //   )
+      // );
 
       setAiSuggestedEvents(prevEvents =>
         prevEvents.map(event =>
