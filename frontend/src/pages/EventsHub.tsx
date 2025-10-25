@@ -19,6 +19,7 @@ import {
   Phone,
   Video
 } from 'lucide-react';
+import EventRatingModal from '../components/EventRatingModal';
 
 interface EventType {
   id: string;
@@ -48,6 +49,8 @@ interface EventType {
     activeParticipants: number;
     lastActivity: string;
   };
+  averageRating?: number;
+  ratingsCount?: number;
 }
 
 const EventsHub: React.FC = () => {
@@ -58,6 +61,10 @@ const EventsHub: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingAiSuggestions, setLoadingAiSuggestions] = useState<boolean>(true);
   const [error, setError] = useState<string>('');
+  
+  // Rating modal state
+  const [ratingModalOpen, setRatingModalOpen] = useState<boolean>(false);
+  const [selectedEventForRating, setSelectedEventForRating] = useState<EventType | null>(null);
 
   const categories = [
     { id: 'all', name: 'Tous', icon: Sparkles },
@@ -94,6 +101,8 @@ const EventsHub: React.FC = () => {
     featured: event.featured || false,
     difficulty: event.difficulty || 'Intermédiaire',
     networking: event.networking || 'Modéré',
+    averageRating: event.averageRating || 0,
+    ratingsCount: event.ratingsCount || 0,
     discussionChannel: event.discussionChannel || {
       id: `channel_${event._id || event.id}`,
       messageCount: Math.floor(Math.random() * 200) + 10,
@@ -102,7 +111,7 @@ const EventsHub: React.FC = () => {
     }
   });
 
- const [user, setUser] = useState<any | null>(null);
+  const [user, setUser] = useState<any | null>(null);
 
   const [profileData, setProfileData] = useState({
     _id: "",
@@ -115,89 +124,85 @@ const EventsHub: React.FC = () => {
     joinDate: "",
     matches: [] as string[],
     events: [] as string[],
-    
-
   });
 
-useEffect(() => {
-  const loadAiSuggestions = async () => {
-    try {
-      const storedUser = localStorage.getItem("user") || sessionStorage.getItem("user");
-      console.log("→ Données utilisateur récupérées :", storedUser);
+  useEffect(() => {
+    const loadAiSuggestions = async () => {
+      try {
+        const storedUser = localStorage.getItem("user") || sessionStorage.getItem("user");
+        console.log("→ Données utilisateur récupérées :", storedUser);
 
-      if (!storedUser) {
-        console.log('No user data found in storage');
+        if (!storedUser) {
+          console.log('No user data found in storage');
+          setLoadingAiSuggestions(false);
+          return;
+        }
+
+        const parsedUser = JSON.parse(storedUser);
+        setUser(parsedUser);
+        
+        const userId = parsedUser._id;
+        if (!userId) {
+          console.log('No user ID found in parsed user data');
+          setLoadingAiSuggestions(false);
+          return;
+        }
+
+        console.log('Using user ID for AI suggestions:', userId);
+        
+        setLoadingAiSuggestions(true);
+
+        console.log('Fetching AI suggestions from:', `${AI_API_URL}/ai_suggest_events/${userId}`);
+        const response = await fetch(`${AI_API_URL}/ai_suggest_events/${userId}`, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        console.log('AI suggestions response status:', response.status);
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error('Error response from AI API:', errorText);
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Received AI suggestions:', data);
+
+        const transformedSuggestions = data.suggested_events.map((event: any) => ({
+          ...transformEvent(event),
+          featured: true
+        }));
+        
+        setAiSuggestedEvents(transformedSuggestions);
+
+        setProfileData({
+          _id: parsedUser._id || "",
+          name: parsedUser.name || "Nom inconnu",
+          email: parsedUser.email || "Email non renseigné",
+          bio: parsedUser.bio || "Aucune bio disponible",
+          location: parsedUser.location || "Non spécifié",
+          interests: parsedUser.interests || [],
+          goals: parsedUser.goals || [],
+          joinDate: new Date(parsedUser.createdAt).toLocaleDateString("fr-FR", {
+            month: "long",
+            year: "numeric",
+          }),
+          matches: parsedUser.matches || [],
+          events: parsedUser.events || [],
+        });
+
+      } catch (err) {
+        console.error("Error fetching AI suggestions:", err);
+      } finally {
         setLoadingAiSuggestions(false);
-        return;
       }
+    };
 
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
-      
-      const userId = parsedUser._id;
-      if (!userId) {
-        console.log('No user ID found in parsed user data');
-        setLoadingAiSuggestions(false);
-        return;
-      }
-
-      console.log('Using user ID for AI suggestions:', userId);
-      
-      setLoadingAiSuggestions(true);
-
-      // Make API call using userId directly instead of profileData._id
-      console.log('Fetching AI suggestions from:', `${AI_API_URL}/ai_suggest_events/${userId}`);
-      const response = await fetch(`${AI_API_URL}/ai_suggest_events/${userId}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      console.log('AI suggestions response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Error response from AI API:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log('Received AI suggestions:', data);
-
-      const transformedSuggestions = data.suggested_events.map((event: any) => ({
-        ...transformEvent(event),
-        featured: true
-      }));
-      
-      setAiSuggestedEvents(transformedSuggestions);
-
-      // Update profileData after everything else is done
-      setProfileData({
-        _id: parsedUser._id || "",
-        name: parsedUser.name || "Nom inconnu",
-        email: parsedUser.email || "Email non renseigné",
-        bio: parsedUser.bio || "Aucune bio disponible",
-        location: parsedUser.location || "Non spécifié",
-        interests: parsedUser.interests || [],
-        goals: parsedUser.goals || [],
-        joinDate: new Date(parsedUser.createdAt).toLocaleDateString("fr-FR", {
-          month: "long",
-          year: "numeric",
-        }),
-        matches: parsedUser.matches || [],
-        events: parsedUser.events || [],
-      });
-
-    } catch (err) {
-      console.error("Error fetching AI suggestions:", err);
-    } finally {
-      setLoadingAiSuggestions(false);
-    }
-  };
-
-  loadAiSuggestions();
-}, [AI_API_URL]);
+    loadAiSuggestions();
+  }, [AI_API_URL]);
 
   // Load all events
   useEffect(() => {
@@ -239,9 +244,8 @@ useEffect(() => {
     loadEvents();
   }, [API_BASE_URL]);
 
-  // Filter events (excluding AI suggested events from the main list)
+  // Filter events
   const filteredEvents = events.filter(event => {
-    // Exclude events that are already in AI suggestions
     const isInAiSuggestions = aiSuggestedEvents.some(aiEvent => aiEvent.id === event.id);
     if (isInAiSuggestions) return false;
 
@@ -255,28 +259,6 @@ useEffect(() => {
 
   const handleApply = async (eventId: string) => {
     try {
-      // const response = await fetch(`${API_BASE_URL}/events/${eventId}/apply`, {
-      //   method: 'POST',
-      //   headers: {
-      //     'Content-Type': 'application/json',
-      //   },
-      // });
-
-      // if (!response.ok) {
-      //   throw new Error('Failed to apply to event');
-      // }
-
-      // console.log('Successfully applied to event:', eventId);
-
-      // // Update local state
-      // setEvents(prevEvents =>
-      //   prevEvents.map(event =>
-      //     event.id === eventId
-      //       ? { ...event, attendees: event.attendees + 1 }
-      //       : event
-      //   )
-      // );
-
       setAiSuggestedEvents(prevEvents =>
         prevEvents.map(event =>
           event.id === eventId
@@ -285,7 +267,6 @@ useEffect(() => {
         )
       );
 
-      // Navigate to booking page
       window.location.href = `/event/${eventId}/book`;
     } catch (error) {
       console.error('Error applying to event:', error);
@@ -294,6 +275,56 @@ useEffect(() => {
 
   const handleJoinDiscussion = (eventId: string) => {
     window.location.href = `/event/${eventId}/discussion`;
+  };
+
+  const handleOpenRatingModal = (event: EventType) => {
+    setSelectedEventForRating(event);
+    setRatingModalOpen(true);
+  };
+
+  const handleSubmitRating = async (eventId: string, rating: number, comment: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/events/rating`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId,
+          userId: profileData._id,
+          rating,
+          comment: comment.trim() || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to submit rating');
+      }
+
+      const result = await response.json();
+      console.log('Rating submitted successfully:', result);
+
+      // Update local state with new rating info
+      const updateEventRating = (event: EventType) => {
+        if (event.id === eventId) {
+          return {
+            ...event,
+            averageRating: result.averageRating || event.averageRating,
+            ratingsCount: (event.ratingsCount || 0) + 1,
+          };
+        }
+        return event;
+      };
+
+      setEvents(prevEvents => prevEvents.map(updateEventRating));
+      setAiSuggestedEvents(prevEvents => prevEvents.map(updateEventRating));
+
+      // Show success message
+      alert('Merci pour votre évaluation ! 🌟');
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      throw error;
+    }
   };
 
   const formatTimeAgo = (dateString: string) => {
@@ -315,6 +346,22 @@ useEffect(() => {
   };
 
   const isLoading = loading || loadingAiSuggestions;
+
+  const renderRatingBadge = (event: EventType) => {
+    if (!event.averageRating || event.averageRating === 0) return null;
+
+    return (
+      <div className="flex items-center space-x-1 bg-gradient-to-r from-yellow-500/20 to-orange-500/20 backdrop-blur-sm border border-yellow-500/30 rounded-full px-2 py-1">
+        <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
+        <span className="text-yellow-300 text-xs font-medium">
+          {event.averageRating.toFixed(1)}
+        </span>
+        {event.ratingsCount && event.ratingsCount > 0 && (
+          <span className="text-yellow-300/60 text-xs">({event.ratingsCount})</span>
+        )}
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -374,7 +421,6 @@ useEffect(() => {
         {/* Search and Filters */}
         <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6 mb-8">
           <div className="flex flex-col lg:flex-row gap-4 items-center">
-            {/* Search */}
             <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -386,7 +432,6 @@ useEffect(() => {
               />
             </div>
 
-            {/* Categories */}
             <div className="flex space-x-2 overflow-x-auto">
               {categories.map((category) => (
                 <button
@@ -406,7 +451,7 @@ useEffect(() => {
           </div>
         </div>
 
-        {/* AI Suggested Events (Featured) */}
+        {/* AI Suggested Events */}
         {aiSuggestedEvents.length > 0 && (
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
@@ -414,11 +459,20 @@ useEffect(() => {
               Recommandés pour vous
             </h2>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {aiSuggestedEvents.map((event, index) => (
+              {aiSuggestedEvents.map((event) => (
                 <div
                   key={event.id}
                   className="relative bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden hover:bg-white/10 transition-all duration-500 group"
                 >
+                  {/* Rating Button - Top Left */}
+                  <button
+                    onClick={() => handleOpenRatingModal(event)}
+                    className="absolute top-4 left-4 z-10 bg-gradient-to-r from-yellow-500/90 to-orange-500/90 hover:from-yellow-400 hover:to-orange-400 backdrop-blur-sm text-white p-2 rounded-full transition-all duration-300 shadow-lg hover:scale-110 group/rating"
+                    title="Évaluer cet événement"
+                  >
+                    <Star className="w-5 h-5 group-hover/rating:fill-white" />
+                  </button>
+
                   <div className="absolute top-4 right-4 z-10">
                     <div className="bg-gradient-to-r from-purple-400 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-bold flex items-center space-x-1">
                       <Sparkles className="w-3 h-3" />
@@ -437,12 +491,12 @@ useEffect(() => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
 
-                    {/* AI Match Score */}
-                    <div className="absolute bottom-4 left-4">
+                    <div className="absolute bottom-4 left-4 flex items-center space-x-2">
                       <div className="bg-green-500/20 backdrop-blur-sm border border-green-500/30 rounded-full px-3 py-1 flex items-center space-x-2">
                         <Sparkles className="w-4 h-4 text-green-400" />
                         <span className="text-green-300 text-sm font-medium">{event.aiMatchScore}% match</span>
                       </div>
+                      {renderRatingBadge(event)}
                     </div>
                   </div>
 
@@ -477,7 +531,6 @@ useEffect(() => {
                       </div>
                     </div>
 
-                    {/* Discussion Stats */}
                     {event.discussionChannel && (
                       <div className="bg-white/5 rounded-xl p-3 mb-4">
                         <div className="flex items-center justify-between">
@@ -541,11 +594,20 @@ useEffect(() => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredEvents.map((event, index) => (
+            {filteredEvents.map((event) => (
               <div
                 key={event.id}
-                className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden hover:bg-white/10 transition-all duration-300 group"
+                className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden hover:bg-white/10 transition-all duration-300 group relative"
               >
+                {/* Rating Button - Top Left */}
+                <button
+                  onClick={() => handleOpenRatingModal(event)}
+                  className="absolute top-3 left-3 z-10 bg-gradient-to-r from-yellow-500/90 to-orange-500/90 hover:from-yellow-400 hover:to-orange-400 backdrop-blur-sm text-white p-2 rounded-full transition-all duration-300 shadow-lg hover:scale-110 group/rating"
+                  title="Évaluer cet événement"
+                >
+                  <Star className="w-4 h-4 group-hover/rating:fill-white" />
+                </button>
+
                 <div className="relative h-40 overflow-hidden">
                   <img
                     src={event.image}
@@ -557,15 +619,14 @@ useEffect(() => {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
 
-                  {/* AI Match Score */}
-                  <div className="absolute top-3 right-3">
+                  <div className="absolute top-3 right-3 flex flex-col space-y-2 items-end">
                     <div className="bg-green-500/20 backdrop-blur-sm border border-green-500/30 rounded-full px-2 py-1 flex items-center space-x-1">
                       <Sparkles className="w-3 h-3 text-green-400" />
                       <span className="text-green-300 text-xs font-medium">{event.aiMatchScore}%</span>
                     </div>
+                    {renderRatingBadge(event)}
                   </div>
 
-                  {/* Price */}
                   <div className="absolute bottom-3 left-3">
                     <div className="bg-black/50 backdrop-blur-sm rounded-full px-3 py-1">
                       <span className="text-green-400 font-bold text-sm">{event.price}</span>
@@ -595,7 +656,6 @@ useEffect(() => {
                     </div>
                   </div>
 
-                  {/* Tags */}
                   {event.tags && event.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1 mb-4">
                       {event.tags.slice(0, 3).map((tag, tagIndex) => (
@@ -609,7 +669,6 @@ useEffect(() => {
                     </div>
                   )}
 
-                  {/* Discussion Preview */}
                   {event.discussionChannel && (
                     <div className="bg-white/5 rounded-lg p-3 mb-3 border border-white/10">
                       <div className="flex items-center justify-between mb-2">
@@ -659,7 +718,6 @@ useEffect(() => {
                         <ArrowRight className="w-3 h-3" />
                       </button>
 
-                      {/* Quick Actions */}
                       <div className="flex space-x-1">
                         <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/20 transition-all duration-300">
                           <Phone className="w-3 h-3 text-gray-400" />
@@ -697,6 +755,20 @@ useEffect(() => {
           </button>
         </div>
       </div>
+
+      {/* Rating Modal */}
+      {selectedEventForRating && (
+        <EventRatingModal
+          isOpen={ratingModalOpen}
+          onClose={() => {
+            setRatingModalOpen(false);
+            setSelectedEventForRating(null);
+          }}
+          eventId={selectedEventForRating.id}
+          eventTitle={selectedEventForRating.title}
+          onSubmitRating={handleSubmitRating}
+        />
+      )}
     </div>
   );
 };

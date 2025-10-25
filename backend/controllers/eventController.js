@@ -1,4 +1,7 @@
 import * as eventService from "../services/eventService.js";
+import Event from "../models/Event.js";
+import Rating from "../models/Rating.js";
+import mongoose from "mongoose";
 
 export const createEvent = async (req, res) => {
   try {
@@ -93,5 +96,46 @@ export const countEvents = async (req, res) => {
       error: error.message,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
+  }
+};
+
+
+export const addRating = async (req, res) => {
+  try {
+    const { eventId, userId, rating, comment } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ success: false, message: 'Rating must be between 1 and 5' });
+    }
+
+    // Upsert : si l'utilisateur a déjà noté, on met à jour
+    await Rating.findOneAndUpdate(
+      { eventId, userId },
+      { rating, comment },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    // Calculer la moyenne et le nombre de ratings
+    const stats = await Rating.aggregate([
+{ $match: { eventId: new mongoose.Types.ObjectId(eventId) } },
+      {
+        $group: {
+          _id: '$eventId',
+          averageRating: { $avg: '$rating' },
+          ratingsCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const averageRating = stats[0]?.averageRating || 0;
+    const ratingsCount = stats[0]?.ratingsCount || 0;
+
+    // Mettre à jour Event
+    await Event.findByIdAndUpdate(eventId, { averageRating, ratingsCount });
+
+    res.json({ success: true, averageRating, ratingsCount });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Server Error' });
   }
 };

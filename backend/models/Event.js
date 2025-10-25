@@ -50,6 +50,8 @@ const eventSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   },
+  averageRating: { type: Number, default: 0 },
+  ratingsCount: { type: Number, default: 0 },
   participants: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

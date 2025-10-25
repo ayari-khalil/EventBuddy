@@ -41,6 +41,11 @@ router.put("/:id", eventController.updateEvent);
 router.delete("/:id", eventController.deleteEvent);
 router.get("/count/total", eventController.countEvents);
 
+
+
+router.post('/rating', eventController.addRating);
+
+
 // ==========================================
 // ROUTE: Générer un événement avec l'IA
 // ==========================================
