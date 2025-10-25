@@ -119,93 +119,85 @@ const EventsHub: React.FC = () => {
 
   });
 
-  // Load AI suggested events
-  useEffect(() => {
-      const storedUser =
-      localStorage.getItem("user") || sessionStorage.getItem("user");
+useEffect(() => {
+  const loadAiSuggestions = async () => {
+    try {
+      const storedUser = localStorage.getItem("user") || sessionStorage.getItem("user");
       console.log("→ Données utilisateur récupérées :", storedUser);
-    const loadAiSuggestions = async () => {
-      try {
 
+      if (!storedUser) {
+        console.log('No user data found in storage');
+        setLoadingAiSuggestions(false);
+        return;
+      }
 
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
+      
+      const userId = parsedUser._id;
+      if (!userId) {
+        console.log('No user ID found in parsed user data');
+        setLoadingAiSuggestions(false);
+        return;
+      }
 
-        const parsedUser = JSON.parse(storedUser || "{}");
-        setUser(parsedUser);
+      console.log('Using user ID for AI suggestions:', userId);
+      
+      setLoadingAiSuggestions(true);
 
-        // Remplir profileData avec les infos du backend
-        setProfileData({
-          _id: parsedUser._id || "",
-          name: parsedUser.name || "Nom inconnu",
-          email: parsedUser.email || "Email non renseigné",
-          bio: parsedUser.bio || "Aucune bio disponible",
-          location: parsedUser.location || "Non spécifié",
-          interests: parsedUser.interests || [],
-          goals: parsedUser.goals || [],
-          joinDate: new Date(parsedUser.createdAt).toLocaleDateString("fr-FR", {
-            month: "long",
-            year: "numeric",
-          }),
+      // Make API call using userId directly instead of profileData._id
+      console.log('Fetching AI suggestions from:', `${AI_API_URL}/ai_suggest_events/${userId}`);
+      const response = await fetch(`${AI_API_URL}/ai_suggest_events/${userId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      console.log('AI suggestions response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Error response from AI API:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Received AI suggestions:', data);
+
+      const transformedSuggestions = data.suggested_events.map((event: any) => ({
+        ...transformEvent(event),
+        featured: true
+      }));
+      
+      setAiSuggestedEvents(transformedSuggestions);
+
+      // Update profileData after everything else is done
+      setProfileData({
+        _id: parsedUser._id || "",
+        name: parsedUser.name || "Nom inconnu",
+        email: parsedUser.email || "Email non renseigné",
+        bio: parsedUser.bio || "Aucune bio disponible",
+        location: parsedUser.location || "Non spécifié",
+        interests: parsedUser.interests || [],
+        goals: parsedUser.goals || [],
+        joinDate: new Date(parsedUser.createdAt).toLocaleDateString("fr-FR", {
+          month: "long",
+          year: "numeric",
+        }),
         matches: parsedUser.matches || [],
         events: parsedUser.events || [],
-        });
+      });
 
+    } catch (err) {
+      console.error("Error fetching AI suggestions:", err);
+    } finally {
+      setLoadingAiSuggestions(false);
+    }
+  };
 
-
-
-
-
-
-
-
-
-        setLoadingAiSuggestions(true);
-        console.log('Profile Data for AI suggestions:', profileData._id);
-
-
-
-        if (!profileData._id) {
-
-          console.log('No user ID found in localStorage, skipping AI suggestions');
-          setLoadingAiSuggestions(false);
-          return;
-        }
-
-
-        console.log('Fetching AI suggestions from:', `${AI_API_URL}/ai_suggest_events/${profileData._id}`);
-        const response = await fetch(`${AI_API_URL}/ai_suggest_events/${profileData._id}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        console.log('AI suggestions response status:', response.status);
-
-        if (!response.ok) {
-          const errorText = await response.text();
-          console.error('Error response from AI API:', errorText);
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Received AI suggestions:', data);
-
-        // Transform and set AI suggested events
-const transformedSuggestions = data.suggested_events.map((event: any) => ({
-  ...transformEvent(event),
-  featured: true
-}));
-        setAiSuggestedEvents(transformedSuggestions);
-      } catch (err) {
-        console.error("Error fetching AI suggestions:", err);
-        // Don't show error to user, just skip AI suggestions
-      } finally {
-        setLoadingAiSuggestions(false);
-      }
-    };
-
-    loadAiSuggestions();
-  }, [AI_API_URL]);
+  loadAiSuggestions();
+}, [AI_API_URL]);
 
   // Load all events
   useEffect(() => {
