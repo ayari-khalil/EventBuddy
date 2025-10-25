@@ -3,6 +3,8 @@ import mongoose from "mongoose";
 import cors from "cors";
 import { createServer } from "http";
 import dotenv from "dotenv";
+import { Server } from "socket.io";
+
 
 // Routes
 import matchRoutes from "./routes/matchRoutes.js";
@@ -21,7 +23,14 @@ const app = express();
 const server = createServer(app);
 
 // Initialize Socket.IO with discussion logic
-const io = initializeSocket(server);
+// ⚡ Socket.io config
+const io = new Server(server, {
+  cors: {
+    origin: "*", // 🔥 En prod : mettre l'URL du frontend
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  },
+  pingTimeout: 60000,
+});
 
 // Middleware
 app.use(express.json());
@@ -41,34 +50,55 @@ app.use("/api/users", userRoutes);
 app.use("/api/messages", messageRoutes);
 
 
-// MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
-    useUnifiedTopology: true
+    useUnifiedTopology: true,
   })
   .then(() => console.log("✅ Connected to MongoDB!"))
   .catch((error) => console.error("❌ MongoDB connection error:", error));
 
-// Test API route
+// 🟢 Route test API
 app.get("/", (req, res) => {
   res.json({ message: "🚀 EventBuddy API is running!" });
 });
 
-// 404 handler
+// 🔥 WebSocket logique (chat / notifications)
+io.on("connection", (socket) => {
+  console.log(`⚡ User connected: ${socket.id}`);
+
+  // Recevoir un message
+  socket.on("sendMessage", (data) => {
+    console.log("📩 Message reçu:", data);
+
+    // Diffuser à tous les autres utilisateurs
+    io.emit("receiveMessage", data);
+  });
+
+
+  // Déconnexion
+  socket.on("disconnect", () => {
+    console.log(`❌ User disconnected: ${socket.id}`);
+  });
+});
+
+// 🛑 404 handler
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
 
-
-
+// 🚀 Start server
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🚀 API + WebSocket running on http://localhost:${PORT}`);
+});
 
 
 
 
 // Start server
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`🤖 Gemini AI: ${process.env.GEMINI_API_KEY ? 'Configuré ✓' : 'Non configuré ✗'}`);
-  console.log(`🚀 API + WebSocket running on http://localhost:${PORT}`);
-});
+// const PORT = process.env.PORT || 5000;
+// server.listen(PORT, "0.0.0.0", () => {
+//   console.log(`🤖 Gemini AI: ${process.env.GEMINI_API_KEY ? 'Configuré ✓' : 'Non configuré ✗'}`);
+//   console.log(`🚀 API + WebSocket running on http://localhost:${PORT}`);
+// });
