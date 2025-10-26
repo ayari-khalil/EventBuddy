@@ -284,6 +284,7 @@ const EventsHub: React.FC = () => {
 
   const handleSubmitRating = async (eventId: string, rating: number, comment: string) => {
     try {
+      console.log('Submitting rating:', { eventId, rating, comment });
       const response = await fetch(`${API_BASE_URL}/events/rating`, {
         method: 'POST',
         headers: {

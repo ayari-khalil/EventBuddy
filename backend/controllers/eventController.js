@@ -104,20 +104,29 @@ export const addRating = async (req, res) => {
   try {
     const { eventId, userId, rating, comment } = req.body;
 
+    // Validate required fields
+    if (!eventId || !mongoose.Types.ObjectId.isValid(eventId)) {
+      return res.status(400).json({ success: false, message: 'Invalid or missing eventId' });
+    }
+
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ success: false, message: 'Invalid or missing userId' });
+    }
+
     if (!rating || rating < 1 || rating > 5) {
       return res.status(400).json({ success: false, message: 'Rating must be between 1 and 5' });
     }
 
-    // Upsert : si l'utilisateur a déjà noté, on met à jour
+    // Upsert (insert or update) user rating
     await Rating.findOneAndUpdate(
       { eventId, userId },
       { rating, comment },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    // Calculer la moyenne et le nombre de ratings
+    // Compute average and count again
     const stats = await Rating.aggregate([
-{ $match: { eventId: new mongoose.Types.ObjectId(eventId) } },
+      { $match: { eventId: new mongoose.Types.ObjectId(eventId) } },
       {
         $group: {
           _id: '$eventId',
@@ -130,12 +139,12 @@ export const addRating = async (req, res) => {
     const averageRating = stats[0]?.averageRating || 0;
     const ratingsCount = stats[0]?.ratingsCount || 0;
 
-    // Mettre à jour Event
+    // Update event with new stats
     await Event.findByIdAndUpdate(eventId, { averageRating, ratingsCount });
 
-    res.json({ success: true, averageRating, ratingsCount });
+    res.status(200).json({ success: true, averageRating, ratingsCount });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ success: false, message: 'Server Error' });
+    console.error('Error in addRating:', error);
+    res.status(500).json({ success: false, message: 'Server Error', details: error.message });
   }
 };

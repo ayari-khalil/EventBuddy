@@ -47,3 +47,5 @@ Desktop.ini
 
 # Optional coverage directory
 coverage/
+
+node_modules
