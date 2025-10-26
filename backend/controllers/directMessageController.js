@@ -202,6 +202,90 @@ class DirectMessageController {
       });
     }
   }
+
+
+async startConversationWithEventOwner(req, res) {
+    try {
+      const { eventId } = req.params;
+      
+      // Récupérer l'utilisateur actuel
+      const userId = req.user?.id || req.user?._id || req.body.userId || req.query.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: 'Authentication required - userId missing'
+        });
+      }
+
+      console.log('Finding event:', eventId);
+
+      // ✅ Utilisez "createdBy" au lieu de "owner"
+      const event = await Event.findById(eventId).populate('createdBy', 'name email avatar role');
+      
+      if (!event) {
+        return res.status(404).json({
+          success: false,
+          message: 'Event not found'
+        });
+      }
+
+      console.log('Event found:', event.title);
+      console.log('Event creator:', event.createdBy);
+
+      // ✅ Récupérer l'ID depuis createdBy
+      const ownerId = event.createdBy?._id || event.createdBy;
+
+      if (!ownerId) {
+        return res.status(404).json({
+          success: false,
+          message: 'Event creator not found'
+        });
+      }
+
+      // Vérifier que l'utilisateur n'essaie pas de discuter avec lui-même
+      if (userId.toString() === ownerId.toString()) {
+        return res.status(400).json({
+          success: false,
+          message: 'You cannot start a conversation with yourself'
+        });
+      }
+
+      console.log(`Creating conversation between ${userId} and ${ownerId}`);
+
+      // Créer ou récupérer la conversation
+      const conversation = await directMessageService.getOrCreateConversation(
+        userId,
+        ownerId.toString(),
+        eventId
+      );
+
+      console.log('✅ Conversation created/found:', conversation._id);
+
+      res.json({
+        success: true,
+        data: conversation,
+        eventInfo: {
+          title: event.title,
+          creator: { // ✅ Changé de "owner" à "creator"
+            _id: event.createdBy._id || event.createdBy,
+            name: event.createdBy.name || 'Unknown',
+            avatar: event.createdBy.avatar || null,
+            role: event.createdBy.role || null
+          }
+        }
+      });
+    } catch (error) {
+      console.error('Error in startConversationWithEventOwner:', error);
+      res.status(500).json({
+        success: false,
+        message: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+    }
+  }
 }
 
+const directMessageService = new DirectMessageService();
 export default new DirectMessageController();
+export { setupDirectMessageSocket };

@@ -339,6 +339,85 @@ const EventsHub: React.FC = () => {
     return `Il y a ${diffInDays}j`;
   };
 
+
+/////////////////////////////
+// Ajoutez cette fonction dans EventsHub
+const handleContactOwner = async (eventId: string) => {
+  try {
+    console.log('=== START handleContactOwner ===');
+    console.log('Event ID:', eventId);
+
+    const storedUser = localStorage.getItem("user") || sessionStorage.getItem("user");
+    console.log('Stored user exists:', !!storedUser);
+    
+    if (!storedUser) {
+      alert('Veuillez vous connecter pour contacter l\'organisateur');
+      window.location.href = '/login';
+      return;
+    }
+
+    const currentUser = JSON.parse(storedUser);
+    console.log('Current user:', currentUser);
+    console.log('Current user ID:', currentUser._id);
+
+    // Vérifier si l'utilisateur n'est pas le propriétaire
+    const event = events.find(e => e.id === eventId) || aiSuggestedEvents.find(e => e.id === eventId);
+    console.log('Event found in frontend:', event);
+    console.log('Event createdBy:', event?.createdBy);
+    
+    if (event && event.createdBy === currentUser._id) {
+      alert('Vous êtes l\'organisateur de cet événement');
+      return;
+    }
+
+    console.log('Making API call to:', `${API_BASE_URL}/direct-messages/start-with-event-owner/${eventId}`);
+    console.log('With userId:', currentUser._id);
+
+    const response = await fetch(
+      `${API_BASE_URL}/direct-messages/start-with-event-owner/${eventId}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: currentUser._id
+        })
+      }
+    );
+
+    console.log('Response status:', response.status);
+    console.log('Response ok:', response.ok);
+
+    const data = await response.json();
+    console.log('Response data:', data);
+
+    if (!data.success) {
+      console.error('API returned error:', data.message);
+      throw new Error(data.message);
+    }
+
+    console.log('✅ Conversation created successfully:', data.data._id);
+
+    // Rediriger vers la page de messages avec la conversation sélectionnée
+    window.location.href = `/messages?conversation=${data.data._id}`;
+
+  } catch (error) {
+    console.error('=== ERROR in handleContactOwner ===');
+    console.error('Error type:', error?.constructor?.name);
+    console.error('Error message:', error instanceof Error ? error.message : error);
+    console.error('Full error:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+    
+    alert(error instanceof Error ? error.message : 'Erreur lors de la création de la conversation');
+  }
+};
+
+
+
+
+
+
   const handleRetry = () => {
     setEvents([]);
     setError('');
@@ -363,6 +442,8 @@ const EventsHub: React.FC = () => {
       </div>
     );
   };
+
+
 
   if (isLoading) {
     return (
@@ -563,22 +644,37 @@ const EventsHub: React.FC = () => {
                       </div>
                     </div>
 
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleJoinDiscussion(event.id)}
-                        className="flex-1 bg-white/10 hover:bg-white/20 text-gray-300 px-4 py-2 rounded-xl flex items-center justify-center space-x-2 transition-all duration-300 border border-white/20"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        <span>Discussion</span>
-                      </button>
-                      <button
-                        onClick={() => handleApply(event.id)}
-                        className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 py-2 rounded-xl flex items-center justify-center space-x-2 transition-all duration-300"
-                      >
-                        <span>Postuler</span>
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <div className="space-y-2">
+  {/* Discussion publique + Contact privé */}
+  <div className="flex items-center space-x-2">
+    <button
+      onClick={() => handleJoinDiscussion(event.id)}
+      className="flex-1 bg-white/10 hover:bg-white/20 text-gray-300 px-4 py-2 rounded-xl flex items-center justify-center space-x-2 transition-all duration-300 border border-white/20"
+      title="Discussion publique de l'événement"
+    >
+      <Hash className="w-4 h-4" />
+      <span>Discussion</span>
+    </button>
+    <button
+      onClick={() => handleContactOwner(event.id)}
+      className="flex-1 bg-gradient-to-r from-green-500/20 to-emerald-500/20 hover:from-green-500/30 hover:to-emerald-500/30 text-green-300 px-4 py-2 rounded-xl flex items-center justify-center space-x-2 transition-all duration-300 border border-green-500/30"
+      title="Message privé avec l'organisateur"
+    >
+      <MessageCircle className="w-4 h-4" />
+      <span>Organisateur</span>
+    </button>
+  </div>
+
+  {/* Postuler */}
+  <button
+    onClick={() => handleApply(event.id)}
+    className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-4 py-2 rounded-xl flex items-center justify-center space-x-2 transition-all duration-300"
+  >
+    <span>Postuler à l'événement</span>
+    <ArrowRight className="w-4 h-4" />
+  </button>
+</div>
+
                   </div>
                 </div>
               ))}
@@ -702,33 +798,50 @@ const EventsHub: React.FC = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <button
-                      onClick={() => handleJoinDiscussion(event.id)}
-                      className="w-full bg-white/10 hover:bg-white/20 text-gray-300 px-4 py-2 rounded-lg flex items-center justify-center space-x-2 transition-all duration-300 border border-white/20"
-                    >
-                      <MessageCircle className="w-3 h-3" />
-                      <span className="text-sm">Rejoindre la discussion</span>
-                    </button>
+  {/* Discussion publique + Contact privé */}
+  <div className="flex items-center space-x-2">
+    <button
+      onClick={() => handleJoinDiscussion(event.id)}
+      className="flex-1 bg-white/10 hover:bg-white/20 text-gray-300 px-4 py-2 rounded-lg flex items-center justify-center space-x-2 transition-all duration-300 border border-white/20"
+      title="Discussion publique de l'événement"
+    >
+      <MessageCircle className="w-3 h-3" />
+      <span className="text-sm">Discussion</span>
+    </button>
 
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleApply(event.id)}
-                        className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-sm px-4 py-2 rounded-lg flex items-center justify-center space-x-1 transition-all duration-300"
-                      >
-                        <span>Postuler</span>
-                        <ArrowRight className="w-3 h-3" />
-                      </button>
+    <button
+      onClick={() => handleContactOwner(event.id)}
+      className="flex-1 bg-gradient-to-r from-green-500/20 to-emerald-500/20 hover:from-green-500/30 hover:to-emerald-500/30 text-green-300 text-sm px-4 py-2 rounded-lg flex items-center justify-center space-x-2 transition-all duration-300 border border-green-500/30"
+      title="Message privé avec l'organisateur"
+    >
+      <MessageCircle className="w-3 h-3" />
+      <span>Organisateur</span>
+    </button>
+  </div>
 
-                      <div className="flex space-x-1">
-                        <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/20 transition-all duration-300">
-                          <Phone className="w-3 h-3 text-gray-400" />
-                        </button>
-                        <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/20 transition-all duration-300">
-                          <Video className="w-3 h-3 text-gray-400" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
+  {/* Postuler + Appels */}
+  <div className="flex items-center space-x-2">
+    <button
+      onClick={() => handleApply(event.id)}
+      className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white text-sm px-4 py-2 rounded-lg flex items-center justify-center space-x-1 transition-all duration-300"
+    >
+      <span>Postuler</span>
+      <ArrowRight className="w-3 h-3" />
+    </button>
+
+    <div className="flex space-x-1">
+      <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/20 transition-all duration-300">
+        <Phone className="w-3 h-3 text-gray-400" />
+      </button>
+      <button className="p-2 bg-white/5 hover:bg-white/10 rounded-lg border border-white/20 transition-all duration-300">
+        <Video className="w-3 h-3 text-gray-400" />
+      </button>
+    </div>
+  </div>
+</div>
+
+
+                  
                 </div>
               </div>
             ))}

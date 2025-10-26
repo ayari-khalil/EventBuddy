@@ -146,6 +146,7 @@ const EventDiscussionPage = () => {
 
   const handleSendMessage = (e) => {
     e.preventDefault();
+    console.log("Sending message:", newMessage, "Replying to:", replyingTo);
     
     if (!newMessage.trim() || !socket || !isConnected) return;
 
@@ -158,6 +159,7 @@ const EventDiscussionPage = () => {
 
     setNewMessage('');
     setReplyingTo(null);
+    console.log("Message sent");
     
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);

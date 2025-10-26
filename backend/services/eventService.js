@@ -1,30 +1,43 @@
 // services/eventService.js
 import Event from "../models/Event.js";
 import Discussion from "../models/Discussion.js";
+
+
 export const createEvent = async (eventData) => {
   try {
-    console.log("Creating event in service:", eventData);
-    
-    // Create the event
+    console.log('📝 Creating event with data:', eventData);
+
+    // 1. Créer l'événement d'abord
     const event = new Event(eventData);
     await event.save();
     
-    // Create associated discussion
-    const discussion = new Discussion({
-      event: event._id,
-      messages: [],
-      settings: {
-        allowReactions: true,
-        allowReplies: true,
-        moderationEnabled: false
-      }
-    });
-    await discussion.save();
-    
-    console.log("Event created successfully with discussion:", event._id);
+    console.log('✅ Event created with ID:', event._id);
+
+    // 2. Créer la discussion associée APRÈS avoir l'ID de l'événement
+    try {
+      const discussion = new Discussion({
+        eventId: event._id,  // ✅ Maintenant on a l'ID de l'événement
+        messages: [],
+        participants: eventData.createdBy ? [eventData.createdBy] : []
+      });
+      
+      await discussion.save();
+      console.log('✅ Discussion created for event:', event._id);
+      
+      // 3. Lier la discussion à l'événement (optionnel, selon votre schéma)
+      event.discussionId = discussion._id;
+      await event.save();
+      
+    } catch (discussionError) {
+      console.warn('⚠️  Discussion creation failed, but event was created:', discussionError.message);
+      // L'événement est créé même si la discussion échoue
+      // Vous pouvez décider de supprimer l'événement ou de continuer
+    }
+
     return event;
+    
   } catch (error) {
-    console.error("Service error creating event:", error);
+    console.error('❌ Error in createEvent service:', error);
     throw error;
   }
 };

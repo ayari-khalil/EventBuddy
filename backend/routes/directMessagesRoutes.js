@@ -2,6 +2,7 @@ import express from 'express';
 //import directMessageController from '../controllers/directMessageController.js';
 import directMessageController from '../services/directMessageService.js';// Assuming you have auth middleware
 // import { authenticateToken } from '../middleware/auth.js';
+import DirectMessageController from '../services/directMessageService.js';
 
 const router = express.Router();
 
@@ -14,6 +15,7 @@ router.get('/:conversationId/messages', directMessageController.getMessages);
 router.post('/:conversationId/messages', directMessageController.sendMessage);
 router.patch('/:conversationId/read', directMessageController.markAsRead);
 router.get('/unread-count', directMessageController.getUnreadCount);
+router.post('/start-with-event-owner/:eventId', DirectMessageController.startConversationWithEventOwner);
 
 
 export default router;

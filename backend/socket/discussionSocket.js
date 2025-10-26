@@ -1,22 +1,16 @@
 // socket/discussionSocket.js
-import { Server } from "socket.io";
 import Discussion from "../models/Discussion.js";
 import Message from "../models/Message.js";
 import Event from "../models/Event.js";
 
 let io;
 
-export const initializeSocket = (server) => {
-  io = new Server(server, {
-    cors: {
-      origin: "http://localhost:5173",
-      methods: ["GET", "POST"],
-      credentials: true
-    }
-  });
+export const initializeSocket = (socketIO) => {
+  // ✅ Utilisez l'instance passée au lieu d'en créer une nouvelle
+  io = socketIO;
 
   io.on("connection", (socket) => {
-    console.log(`User connected: ${socket.id}`);
+    console.log(`📡 User connected to discussion: ${socket.id}`);
 
     // Initialize storage for multiple events
     socket.userId = null;
@@ -82,7 +76,7 @@ export const initializeSocket = (server) => {
           }
         });
 
-        console.log(`User ${userId} joined discussion for event ${eventId}`);
+        console.log(`✅ User ${userId} joined discussion for event ${eventId}`);
       } catch (error) {
         console.error("Error joining discussion:", error);
         socket.emit("error", { message: "Failed to join discussion" });
@@ -137,7 +131,7 @@ export const initializeSocket = (server) => {
           }
         });
 
-        console.log(`Message sent in event ${eventId} by user ${userId}`);
+        console.log(`📩 Message sent in event ${eventId} by user ${userId}`);
       } catch (error) {
         console.error("Error sending message:", error);
         socket.emit("error", { message: "Failed to send message" });
@@ -201,7 +195,7 @@ export const initializeSocket = (server) => {
       }
     });
 
-    // Leave discussion (only one event at a time)
+    // Leave discussion
     socket.on("leave_discussion", async (data) => {
       try {
         const { eventId } = data;
@@ -231,13 +225,13 @@ export const initializeSocket = (server) => {
         }
 
         socket.leave(`event_${eventId}`);
-        console.log(`User ${socket.userId} left discussion for event ${eventId}`);
+        console.log(`👋 User ${socket.userId} left discussion for event ${eventId}`);
       } catch (error) {
         console.error("Error leaving discussion:", error);
       }
     });
 
-    // Handle disconnection (leave all events)
+    // Handle disconnection
     socket.on("disconnect", async () => {
       try {
         for (const eventId of socket.eventIds) {
@@ -265,7 +259,7 @@ export const initializeSocket = (server) => {
           }
         }
 
-        console.log(`User disconnected: ${socket.id}`);
+        console.log(`❌ User disconnected from discussion: ${socket.id}`);
       } catch (error) {
         console.error("Error handling disconnect:", error);
       }

@@ -42,6 +42,19 @@ const MessagesPage = () => {
     scrollToBottom();
   }, [messages]);
 
+
+    useEffect(() => {
+    if (location.state?.selectedConversationId && conversations.length > 0) {
+      const targetConversation = conversations.find(
+        conv => conv._id === location.state.selectedConversationId
+      );
+      
+      if (targetConversation) {
+        handleChatSelect(targetConversation);
+      }
+    }
+  }, [location.state, conversations]);
+
   // Load current user
   useEffect(() => {
     const storedUser = localStorage.getItem("user") || sessionStorage.getItem("user");

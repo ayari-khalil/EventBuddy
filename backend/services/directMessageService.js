@@ -1,6 +1,7 @@
 import DirectMessage from '../models/DirectMessage.js';
 import DirectMessageContent from '../models/DirectMessageContent.js';
 import User from '../models/User.js';
+import Event from '../models/Event.js';
 
 class DirectMessageService {
   // Get or create a conversation between two users
@@ -525,6 +526,118 @@ class DirectMessageController {
       });
     }
   }
+
+
+
+async startConversationWithEventOwner(req, res) {
+  try {
+    console.log('\n=== START startConversationWithEventOwner ===');
+    console.log('Request params:', req.params);
+    console.log('Request body:', req.body);
+    console.log('Request query:', req.query);
+
+    const { eventId } = req.params;
+    console.log('Event ID from params:', eventId);
+    
+    // Récupérer l'utilisateur actuel
+    const userId = req.user?.id || req.user?._id || req.body.userId || req.query.userId;
+    console.log('User ID:', userId);
+
+    if (!userId) {
+      console.log('❌ No userId found');
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required - userId missing'
+      });
+    }
+
+    console.log('🔍 Finding event with ID:', eventId);
+
+    // ✅ Utilisez "createdBy" au lieu de "owner"
+    const event = await Event.findById(eventId).populate('createdBy', 'name email avatar role');
+    
+    console.log('Event found:', !!event);
+    if (event) {
+      console.log('Event title:', event.title);
+      console.log('Event createdBy (raw):', event.createdBy);
+      console.log('Event createdBy type:', typeof event.createdBy);
+      console.log('Event createdBy is ObjectId?:', event.createdBy?.constructor?.name);
+    }
+    
+    if (!event) {
+      console.log('❌ Event not found');
+      return res.status(404).json({
+        success: false,
+        message: 'Event not found'
+      });
+    }
+
+    // ✅ Récupérer l'ID depuis createdBy
+    const ownerId = event.createdBy?._id || event.createdBy;
+    console.log('Owner ID extracted:', ownerId);
+    console.log('Owner ID type:', typeof ownerId);
+
+    if (!ownerId) {
+      console.log('❌ Event creator not found');
+      return res.status(404).json({
+        success: false,
+        message: 'Event creator not found'
+      });
+    }
+
+    // Vérifier que l'utilisateur n'essaie pas de discuter avec lui-même
+    console.log('Comparing userId:', userId.toString(), 'with ownerId:', ownerId.toString());
+    if (userId.toString() === ownerId.toString()) {
+      console.log('❌ User trying to message themselves');
+      return res.status(400).json({
+        success: false,
+        message: 'You cannot start a conversation with yourself'
+      });
+    }
+
+    console.log('📞 Creating conversation between', userId, 'and', ownerId);
+
+    // Créer ou récupérer la conversation
+    const conversation = await directMessageService.getOrCreateConversation(
+      userId,
+      ownerId.toString(),
+      eventId
+    );
+
+    console.log('✅ Conversation created/found:', conversation._id);
+    console.log('Conversation participants:', conversation.participants);
+
+    const responseData = {
+      success: true,
+      data: conversation,
+      eventInfo: {
+        title: event.title,
+        creator: {
+          _id: event.createdBy._id || event.createdBy,
+          name: event.createdBy.name || 'Unknown',
+          avatar: event.createdBy.avatar || null,
+          role: event.createdBy.role || null
+        }
+      }
+    };
+
+    console.log('Sending response:', JSON.stringify(responseData, null, 2));
+    res.json(responseData);
+
+  } catch (error) {
+    console.error('\n=== ERROR in startConversationWithEventOwner ===');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    
+    res.status(500).json({
+      success: false,
+      message: error.message,
+      errorName: error.name,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+}
 }
 
 export default new DirectMessageController();

@@ -18,15 +18,16 @@ import { setupDirectMessageSocket } from './services/directMessageService.js';
 
 dotenv.config();
 
-const app = express();                    // ← Only ONE time
-const server = createServer(app);         // ← Only ONE time
+const app = express();
+const server = createServer(app);
 
-const io = new Server(server, {           // ← Only ONE time
+const io = new Server(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
   },
   pingTimeout: 60000,
+  pingInterval: 25000,
 });
 
 // Middleware
@@ -59,22 +60,9 @@ app.get("/", (req, res) => {
   res.json({ message: "🚀 EventBuddy API is running!" });
 });
 
-// Socket handlers
+// ✅ Initialiser les deux systèmes Socket.IO avec la MÊME instance io
 initializeSocket(io);
 setupDirectMessageSocket(io);
-
-io.on("connection", (socket) => {
-  console.log(`⚡ User connected: ${socket.id}`);
-
-  socket.on("sendMessage", (data) => {
-    console.log("📩 Message reçu:", data);
-    io.emit("receiveMessage", data);
-  });
-
-  socket.on("disconnect", () => {
-    console.log(`❌ User disconnected: ${socket.id}`);
-  });
-});
 
 // 404 handler
 app.use((req, res) => {
@@ -85,4 +73,6 @@ app.use((req, res) => {
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 API + WebSocket running on http://localhost:${PORT}`);
+  console.log(`📡 Discussion events: join_discussion, send_message, typing, add_reaction`);
+  console.log(`💬 DM events: join_dm_system, send_dm, dm_typing`);
 });
