@@ -1,4 +1,4 @@
-import React, { useState , useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from "axios";
 import { motion } from 'framer-motion';
 import { 
@@ -6,8 +6,10 @@ import {
   Shield, Mail, Calendar, MapPin, Activity, Ban, CheckCircle,
   AlertTriangle, Edit, Trash2, Download, Upload, RefreshCw
 } from 'lucide-react';
+
 interface User {
-id: string;
+  _id: string;  // ✅ Changé de 'id' à '_id' pour correspondre à MongoDB
+  id?: string;  // Optionnel pour compatibilité
   name: string;
   email: string;
   role: string;
@@ -24,50 +26,141 @@ id: string;
 }
 
 const UserManagement = () => {
+  const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [showUserModal, setShowUserModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<any>(null);
-
- const [users, setUsers] = useState<User[]>([]);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isContactingUser, setIsContactingUser] = useState(false);
 
-useEffect(() => {
-  const fetchUsers = async () => {
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get<{ users: User[] }>(`${API_BASE_URL}/users`);
+        console.log(response.data);
+        setUsers(Array.isArray(response.data) ? response.data : response.data.users);
+      } catch (error) {
+        console.error("Erreur lors du chargement des utilisateurs:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, []);
+
+  /**
+   * Contacter un utilisateur - créer une conversation directe
+   */
+  const handleContactUser = async (targetUser: User) => {
     try {
-      const response = await axios.get<{ users: User[] }>("http://localhost:5000/api/users"); // si l’API renvoie { users: [...] }
-      console.log(response.data); // 🔍 Vérifie ce que tu reçois
-      setUsers(Array.isArray(response.data) ? response.data : response.data.users);
+      console.log('=== START handleContactUser ===');
+      console.log('Target user:', targetUser);
+      
+      setIsContactingUser(true);
+      
+      const storedUser = localStorage.getItem("user") || sessionStorage.getItem("user");
+      console.log('Stored user exists:', !!storedUser);
+      
+      if (!storedUser) {
+        alert('Veuillez vous connecter pour contacter cet utilisateur');
+        window.location.href = '/login';
+        return;
+      }
+      
+      const currentUser = JSON.parse(storedUser);
+      console.log('Current user:', currentUser);
+      console.log('Current user ID:', currentUser._id);
+      
+      // Vérifier si l'utilisateur n'essaie pas de se contacter lui-même
+      if (targetUser._id === currentUser._id) {
+        alert('Vous ne pouvez pas vous envoyer un message à vous-même');
+        return;
+      }
+      
+      console.log('Making API call to:', `${API_BASE_URL}/direct-messages/start-conversation`);
+      console.log('Sending data:', { userId: currentUser._id, targetUserId: targetUser._id });
+      
+      const response = await fetch(
+        `${API_BASE_URL}/direct-messages/start-conversation`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: currentUser._id,
+            targetUserId: targetUser._id  // ✅ Utiliser _id au lieu de id
+          })
+        }
+      );
+      
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+      
+      const data = await response.json();
+      console.log('Response data:', data);
+      
+      if (!data.success) {
+        console.error('API returned error:', data.message);
+        throw new Error(data.message);
+      }
+      
+      console.log('✅ Conversation created successfully:', data.data._id);
+      
+      // Fermer la modal
+      setShowUserModal(false);
+      
+      // Rediriger vers la page de messages avec la conversation sélectionnée
+      window.location.href = `/messages?conversation=${data.data._id}`;
+      
     } catch (error) {
-      console.error("Erreur lors du chargement des utilisateurs:", error);
+      console.error('=== ERROR in handleContactUser ===');
+      console.error('Error type:', error?.constructor?.name);
+      console.error('Error message:', error instanceof Error ? error.message : error);
+      console.error('Full error:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack');
+      
+      alert(error instanceof Error ? error.message : 'Erreur lors de la création de la conversation');
     } finally {
-      setLoading(false);
+      setIsContactingUser(false);
     }
   };
 
-  fetchUsers();
-}, []);
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-400">Chargement des utilisateurs...</p>
+      </div>
+    </div>
+  );
 
-    if (loading) return <div>Chargement...</div>;
+  const filters = [
+    { id: 'all', label: 'Tous', count: users?.length ?? 0 },
+    { id: 'active', label: 'Actifs', count: users?.filter(u => u.status === 'active').length ?? 0 },
+    { id: 'suspended', label: 'Suspendus', count: users?.filter(u => u.status === 'suspended').length ?? 0 },
+    { id: 'pending', label: 'En attente', count: users?.filter(u => u.status === 'pending').length ?? 0 },
+    { id: 'reported', label: 'Signalés', count: users?.filter(u => (u.reports || 0) > 0).length ?? 0 }
+  ];
 
+  const filteredUsers = (users ?? []).filter(user => {
+    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          user.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = selectedFilter === 'all' || 
+                          (selectedFilter === 'reported' ? (user.reports || 0) > 0 : user.status === selectedFilter);
+    return matchesSearch && matchesFilter;
+  });
 
-const filters = [
-  { id: 'all', label: 'Tous', count: users?.length ?? 0 },
-  { id: 'active', label: 'Actifs', count: users?.filter(u => u.status === 'active').length ?? 0 },
-  { id: 'suspended', label: 'Suspendus', count: users?.filter(u => u.status === 'suspended').length ?? 0 },
-  { id: 'pending', label: 'En attente', count: users?.filter(u => u.status === 'pending').length ?? 0 },
-  { id: 'reported', label: 'Signalés', count: users?.filter(u => (u.reports || 0) > 0).length ?? 0 }
-];
-
-const filteredUsers = (users ?? []).filter(user => {
-  const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                        user.email.toLowerCase().includes(searchQuery.toLowerCase());
-  const matchesFilter = selectedFilter === 'all' || 
-                        (selectedFilter === 'reported' ? (user.reports || 0) > 0 : user.status === selectedFilter);
-  return matchesSearch && matchesFilter;
-});
-
+  // Ajouter l'ID pour compatibilité avec l'ancien code
+  const usersWithId = filteredUsers.map(user => ({
+    ...user,
+    id: user._id  // Créer un alias 'id' qui pointe vers '_id'
+  }));
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -96,16 +189,16 @@ const filteredUsers = (users ?? []).filter(user => {
     // Implement bulk actions
   };
 
-const toggleUserSelection = (userId: string) => {
-  setSelectedUsers(prev => 
-    prev.includes(userId)
-      ? prev.filter(id => id !== userId)
-      : [...prev, userId]
-  );
-};
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUsers(prev => 
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
 
   const selectAllUsers = () => {
-    setSelectedUsers(filteredUsers.map(user => user.id));
+    setSelectedUsers(usersWithId.map(user => user.id));
   };
 
   const clearSelection = () => {
@@ -180,13 +273,16 @@ const toggleUserSelection = (userId: string) => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className="p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-300"
+                title="Exporter les données"
               >
                 <Download className="w-5 h-5 text-gray-400" />
               </motion.button>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => window.location.reload()}
                 className="p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-300"
+                title="Rafraîchir"
               >
                 <RefreshCw className="w-5 h-5 text-gray-400" />
               </motion.button>
@@ -239,14 +335,14 @@ const toggleUserSelection = (userId: string) => {
           <div className="p-6 border-b border-white/10">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold text-white">
-                Utilisateurs ({filteredUsers.length})
+                Utilisateurs ({usersWithId.length})
               </h2>
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={selectedUsers.length === filteredUsers.length ? clearSelection : selectAllUsers}
+                  onClick={selectedUsers.length === usersWithId.length ? clearSelection : selectAllUsers}
                   className="text-sm text-blue-400 hover:text-blue-300 transition-colors duration-300"
                 >
-                  {selectedUsers.length === filteredUsers.length ? 'Désélectionner tout' : 'Sélectionner tout'}
+                  {selectedUsers.length === usersWithId.length ? 'Désélectionner tout' : 'Sélectionner tout'}
                 </button>
               </div>
             </div>
@@ -259,8 +355,8 @@ const toggleUserSelection = (userId: string) => {
                   <th className="px-6 py-4 text-left">
                     <input
                       type="checkbox"
-                      checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
-                      onChange={selectedUsers.length === filteredUsers.length ? clearSelection : selectAllUsers}
+                      checked={selectedUsers.length === usersWithId.length && usersWithId.length > 0}
+                      onChange={selectedUsers.length === usersWithId.length ? clearSelection : selectAllUsers}
                       className="w-4 h-4 rounded border-gray-600 text-blue-500 bg-transparent focus:ring-blue-500/20"
                     />
                   </th>
@@ -273,9 +369,9 @@ const toggleUserSelection = (userId: string) => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {filteredUsers.map((user, index) => (
+                {usersWithId.map((user, index) => (
                   <motion.tr
-                    key={user.id}
+                    key={user._id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 * index }}
@@ -316,7 +412,8 @@ const toggleUserSelection = (userId: string) => {
                     </td>
                     
                     <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(user.status || '')}`}>                        {user.status === 'active' ? 'Actif' :
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(user.status || '')}`}>
+                        {user.status === 'active' ? 'Actif' :
                          user.status === 'suspended' ? 'Suspendu' :
                          user.status === 'pending' ? 'En attente' : user.status}
                       </span>
@@ -356,6 +453,7 @@ const toggleUserSelection = (userId: string) => {
                             setShowUserModal(true);
                           }}
                           className="p-2 bg-blue-500/20 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-all duration-300"
+                          title="Voir les détails"
                         >
                           <Eye className="w-4 h-4" />
                         </motion.button>
@@ -366,6 +464,7 @@ const toggleUserSelection = (userId: string) => {
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handleUserAction(user.id, 'suspend')}
                             className="p-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 transition-all duration-300"
+                            title="Suspendre"
                           >
                             <Ban className="w-4 h-4" />
                           </motion.button>
@@ -375,6 +474,7 @@ const toggleUserSelection = (userId: string) => {
                             whileTap={{ scale: 0.95 }}
                             onClick={() => handleUserAction(user.id, 'activate')}
                             className="p-2 bg-green-500/20 text-green-400 rounded-lg hover:bg-green-500/30 transition-all duration-300"
+                            title="Activer"
                           >
                             <UserCheck className="w-4 h-4" />
                           </motion.button>
@@ -384,6 +484,7 @@ const toggleUserSelection = (userId: string) => {
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                           className="p-2 bg-white/5 text-gray-400 rounded-lg hover:bg-white/10 transition-all duration-300"
+                          title="Plus d'options"
                         >
                           <MoreVertical className="w-4 h-4" />
                         </motion.button>
@@ -418,7 +519,7 @@ const toggleUserSelection = (userId: string) => {
                   onClick={() => setShowUserModal(false)}
                   className="p-2 bg-white/5 rounded-xl hover:bg-white/10 transition-all duration-300"
                 >
-                  {/* <X className="w-5 h-5 text-gray-400" /> */}
+                  <span className="text-gray-400 text-2xl">&times;</span>
                 </button>
               </div>
 
@@ -434,7 +535,7 @@ const toggleUserSelection = (userId: string) => {
                     <h3 className="text-xl font-bold text-white">{selectedUser.name}</h3>
                     <p className="text-gray-400">{selectedUser.email}</p>
                     <div className="flex items-center space-x-2 mt-2">
-                      <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(selectedUser.status)}`}>
+                      <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(selectedUser.status || '')}`}>
                         {selectedUser.status}
                       </span>
                       <span className={`px-2 py-1 rounded-full text-xs ${getRoleColor(selectedUser.role)}`}>
@@ -473,15 +574,27 @@ const toggleUserSelection = (userId: string) => {
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex items-center justify-center space-x-2"
+                    onClick={() => handleContactUser(selectedUser)}
+                    disabled={isContactingUser}
+                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <Mail className="w-4 h-4" />
-                    <span>Contacter</span>
+                    {isContactingUser ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        <span>Connexion...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-4 h-4" />
+                        <span>Contacter</span>
+                      </>
+                    )}
                   </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="px-4 py-3 bg-white/5 text-gray-300 rounded-xl hover:bg-white/10 transition-all duration-300"
+                    title="Modifier"
                   >
                     <Edit className="w-4 h-4" />
                   </motion.button>
@@ -489,6 +602,7 @@ const toggleUserSelection = (userId: string) => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     className="px-4 py-3 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30 transition-all duration-300"
+                    title="Supprimer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </motion.button>

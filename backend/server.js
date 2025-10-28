@@ -7,6 +7,7 @@ import { Server } from "socket.io";
 
 // Routes
 import matchRoutes from "./routes/matchRoutes.js";
+import paymentRoutes from './routes/PaymentRouter.js';
 import eventRoutes from "./routes/eventRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import messageRoutes from "./routes/messageRoutes.js";
@@ -45,6 +46,8 @@ app.use("/api/events", eventRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/messages", messageRoutes);
 app.use('/api/direct-messages', directMessageRoutes);
+
+app.use('/api/payment', paymentRoutes);
 
 // MongoDB
 mongoose

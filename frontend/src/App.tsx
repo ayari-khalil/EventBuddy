@@ -26,6 +26,7 @@ import AdminAnalytics from './pages/admin/AdminAnalytics';
 import CreateEvent from './pages/Event/CreateEvent';
 import EventDiscussion from './pages/Event/EventDiscussion';
 import EventBooking from './pages/Event/EventBooking';
+import PaymentCheckout from './components/PaymentCheckout';
 
 function App() {
     const [user, setUser] = useState<any>(null);
@@ -69,6 +70,9 @@ function App() {
             <Route path="/create-event" element={<CreateEvent />} />
             <Route path="/event/:eventId/discussion" element={<EventDiscussion />} />
             <Route path="/event/:eventId/book" element={<EventBooking />} />
+            <Route path="/events/:eventId/booking" element={<EventBooking />} />
+            <Route path="/payment" element={<PaymentCheckout />} />
+ 
 
 
 

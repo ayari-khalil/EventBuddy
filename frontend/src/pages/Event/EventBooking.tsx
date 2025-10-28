@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, MapPin, Users, Clock, Star, ArrowLeft, CreditCard, 
   CheckCircle, User, Mail, Phone, Building, Briefcase, Target,
   Sparkles, UserPlus, Award, Shield, Zap, Heart, Brain, Globe,
-  FileText, AlertCircle, Info, Gift, Ticket, Crown, Diamond
+  FileText, AlertCircle, Info, Gift, Ticket, Crown, Diamond,
+  Download, QrCode, Share2
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -36,14 +37,25 @@ interface Event {
   refundPolicy?: string;
 }
 
+interface BookingConfirmation {
+  bookingId: string;
+  bookingDate: string;
+  ticketType: string;
+  attendeeName: string;
+  attendeeEmail: string;
+}
+
 const EventBooking = () => {
   const { eventId } = useParams<{ eventId: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const ticketRef = useRef<HTMLDivElement>(null);
+  
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBooking, setIsBooking] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [bookingConfirmation, setBookingConfirmation] = useState<BookingConfirmation | null>(null);
   const [selectedTicketType, setSelectedTicketType] = useState('standard');
   const [bookingData, setBookingData] = useState({
     attendeeName: user?.name || '',
@@ -110,7 +122,35 @@ const EventBooking = () => {
   useEffect(() => {
     const fetchEvent = async () => {
       try {
-        // Simuler un appel API
+        const mockEvent: Event = {
+          id: eventId || '1',
+          title: "AI Revolution Summit 2025",
+          description: "Le plus grand événement IA de l'année avec les leaders mondiaux de l'intelligence artificielle. Découvrez les dernières innovations, rencontrez les experts et développez votre réseau professionnel.",
+          date: "15 Mars 2025",
+          time: "09:00 - 18:00",
+          location: "Station F, Paris",
+          attendees: 1200,
+          maxAttendees: 1500,
+          category: "ai",
+          price: "Gratuit",
+          organizer: "AI France",
+          image: "https://images.pexels.com/photos/2747449/pexels-photo-2747449.jpeg?auto=compress&cs=tinysrgb&w=800",
+          tags: ["IA", "Machine Learning", "Deep Learning", "Innovation"],
+          aiMatchScore: 95,
+          potentialMatches: 47,
+          featured: true,
+          difficulty: "Intermédiaire",
+          networking: "Élevé",
+        };
+      }
+      catch (error) {
+        console.error('Erreur lors du chargement de l\'événement:', error);
+      }
+    }});
+
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
         const mockEvent: Event = {
           id: eventId || '1',
           title: "AI Revolution Summit 2025",
@@ -170,67 +210,262 @@ const EventBooking = () => {
     fetchEvent();
   }, [eventId]);
 
-const handleBooking = async (eventId: string | number) => {
-  if (!bookingData.agreeToTerms) {
-    alert('Veuillez accepter les conditions générales');
-    return;
-  }
+  const generateBookingId = () => {
+    return `EB-${Date.now()}-${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+  };
 
-  setIsBooking(true);
-
-  try {
-    // Récupérer userId et token depuis storage (local ou session)
-    const storedUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || 'null');
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token') || null;
-    if (!storedUser || !storedUser._id) {
-      throw new Error('Utilisateur non authentifié');
-    }
-    const userId = storedUser._id;
-    console.log('Réservation pour userId:', userId, 'eventId:', eventId);
-
-    const res = await fetch(`http://localhost:5000/api/users/${userId}/bookEvent/${eventId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      // body optionnel si tu veux envoyer d'autres infos, ex: pass role/application info
-      // body: JSON.stringify({ appliedAs: bookingData.role })
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      // Affiche l'erreur renvoyée par le backend (si existante)
-      console.error('Erreur backend:', data);
-      alert(data.error || 'Erreur lors de la réservation');
+  const handleBooking = async (eventId: string | number) => {
+    if (!bookingData.agreeToTerms) {
+      alert('Veuillez accepter les conditions générales');
       return;
     }
 
-    // Succès
-    setShowConfirmation(true);
+    // Vérifier si le billet nécessite un paiement
+    const selectedTicket = ticketTypes.find(t => t.id === selectedTicketType);
+    const isPaidTicket = selectedTicket?.price !== 'Gratuit';
 
-    // Optionnel : mettre à jour le local state / localStorage pour refléter la nouvelle réservation
-    // par ex. ajouter eventId à la liste user.events si tu gères localement
-    const updatedUser = { ...storedUser };
-    if (!updatedUser.events) updatedUser.events = [];
-    if (!updatedUser.events.includes(eventId)) {
-      updatedUser.events.push(eventId);
-      // mettre à jour storage (si tu veux persister)
-      if (localStorage.getItem('user')) localStorage.setItem('user', JSON.stringify(updatedUser));
-      else sessionStorage.setItem('user', JSON.stringify(updatedUser));
+    if (isPaidTicket) {
+      // Extraire le prix numérique
+      const priceMatch = selectedTicket?.price.match(/\d+/);
+      const price = priceMatch ? parseInt(priceMatch[0]) : 0;
+
+      // Rediriger vers la page de paiement
+      navigate('/payment', {
+        state: {
+          eventId: eventId,
+          eventTitle: event?.title,
+          ticketType: selectedTicket?.name,
+          price: price,
+          attendeeName: bookingData.attendeeName,
+          attendeeEmail: bookingData.attendeeEmail,
+          bookingData: bookingData
+        }
+      });
+      return;
     }
 
-    // Redirection après confirmation (ex: 3s)
-    setTimeout(() => navigate('/my-events'), 3000);
+    // Si gratuit, procéder directement à la réservation
+    setIsBooking(true);
 
-  } catch (error: any) {
-    console.error('Erreur lors de la réservation:', error);
-    alert(error.message || 'Erreur lors de la réservation');
-  } finally {
-    setIsBooking(false);
-  }
-};
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || 'null');
+      const token = localStorage.getItem('token') || sessionStorage.getItem('token') || null;
+      
+      if (!storedUser || !storedUser._id) {
+        throw new Error('Utilisateur non authentifié');
+      }
+      
+      const userId = storedUser._id;
+
+      const res = await fetch(`http://localhost:5000/api/users/${userId}/bookEvent/${eventId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        console.error('Erreur backend:', data);
+        alert(data.error || 'Erreur lors de la réservation');
+        return;
+      }
+
+      // Créer les données de confirmation
+      const confirmation: BookingConfirmation = {
+        bookingId: generateBookingId(),
+        bookingDate: new Date().toLocaleString('fr-FR'),
+        ticketType: ticketTypes.find(t => t.id === selectedTicketType)?.name || 'Standard',
+        attendeeName: bookingData.attendeeName,
+        attendeeEmail: bookingData.attendeeEmail
+      };
+
+      setBookingConfirmation(confirmation);
+      setShowConfirmation(true);
+
+      const updatedUser = { ...storedUser };
+      if (!updatedUser.events) updatedUser.events = [];
+      if (!updatedUser.events.includes(eventId)) {
+        updatedUser.events.push(eventId);
+        if (localStorage.getItem('user')) localStorage.setItem('user', JSON.stringify(updatedUser));
+        else sessionStorage.setItem('user', JSON.stringify(updatedUser));
+      }
+
+    } catch (error: any) {
+      console.error('Erreur lors de la réservation:', error);
+      alert(error.message || 'Erreur lors de la réservation');
+    } finally {
+      setIsBooking(false);
+    }
+  };
+
+  const downloadTicket = async () => {
+    if (!event || !bookingConfirmation) return;
+
+    // Créer un canvas pour générer l'image du billet
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Dimensions du billet (format A4 paysage réduit)
+    canvas.width = 1200;
+    canvas.height = 600;
+
+    // Fond dégradé
+    const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+    gradient.addColorStop(0, '#1e3a8a');
+    gradient.addColorStop(0.5, '#7c3aed');
+    gradient.addColorStop(1, '#ec4899');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Overlay pattern
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    for (let i = 0; i < 20; i++) {
+      ctx.fillRect(i * 60, 0, 30, canvas.height);
+    }
+
+    // Bordure
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(20, 20, canvas.width - 40, canvas.height - 40);
+
+    // Logo/Badge EventBuddy
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.beginPath();
+    ctx.arc(100, 80, 40, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 24px Arial';
+    ctx.fillText('EB', 84, 90);
+
+    // Titre EventBuddy
+    ctx.font = 'bold 28px Arial';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText('EventBuddy', 160, 85);
+
+    // Type de billet (badge)
+    const ticketType = ticketTypes.find(t => t.id === selectedTicketType);
+    ctx.fillStyle = selectedTicketType === 'vip' ? '#fbbf24' : 
+                    selectedTicketType === 'premium' ? '#a78bfa' : '#60a5fa';
+    ctx.fillRect(canvas.width - 250, 40, 200, 60);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 24px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText(ticketType?.name.toUpperCase() || 'STANDARD', canvas.width - 150, 80);
+    ctx.textAlign = 'left';
+
+    // Ligne de séparation
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(50, 140);
+    ctx.lineTo(canvas.width - 50, 140);
+    ctx.stroke();
+
+    // Titre de l'événement
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 40px Arial';
+    ctx.fillText(event.title, 50, 200);
+
+    // Détails de l'événement
+    ctx.font = '20px Arial';
+    ctx.fillStyle = '#e5e7eb';
+
+    // Date
+    ctx.fillText('📅 ' + event.date, 50, 260);
+    
+    // Heure
+    ctx.fillText('🕐 ' + event.time, 50, 300);
+    
+    // Lieu
+    ctx.fillText('📍 ' + event.location, 50, 340);
+
+    // Ligne de séparation
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(50, 380);
+    ctx.lineTo(canvas.width - 50, 380);
+    ctx.stroke();
+
+    // Informations du participant
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 18px Arial';
+    ctx.fillText('PARTICIPANT', 50, 420);
+
+    ctx.font = '18px Arial';
+    ctx.fillStyle = '#e5e7eb';
+    ctx.fillText(bookingConfirmation.attendeeName, 50, 450);
+    ctx.fillText(bookingConfirmation.attendeeEmail, 50, 480);
+
+    // ID de réservation
+    ctx.fillStyle = '#ffffff';
+    ctx.font = 'bold 18px Arial';
+    ctx.fillText('ID RÉSERVATION', canvas.width - 450, 420);
+    
+    ctx.font = '16px Arial';
+    ctx.fillStyle = '#60a5fa';
+    ctx.fillText(bookingConfirmation.bookingId, canvas.width - 450, 450);
+
+    // Date de réservation
+    ctx.fillStyle = '#e5e7eb';
+    ctx.font = '14px Arial';
+    ctx.fillText('Réservé le: ' + bookingConfirmation.bookingDate, canvas.width - 450, 480);
+
+    // QR Code placeholder (carré)
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(canvas.width - 180, 400, 120, 120);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('QR CODE', canvas.width - 120, 460);
+    ctx.font = '10px Arial';
+    ctx.fillText('Scan à l\'entrée', canvas.width - 120, 480);
+    ctx.textAlign = 'left';
+
+    // Footer
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.font = '12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('Ce billet est personnel et non transférable • Présentez-le à l\'entrée de l\'événement', canvas.width / 2, 560);
+    ctx.textAlign = 'left';
+
+    // Convertir le canvas en blob et télécharger
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `billet-${event.title.replace(/\s+/g, '-')}-${bookingConfirmation.bookingId}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  };
+
+  const shareTicket = () => {
+    if (!event || !bookingConfirmation) return;
+    
+    const shareText = `🎉 Je serai à ${event.title} le ${event.date} !\n📍 ${event.location}\n\nRéservez votre place sur EventBuddy`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: event.title,
+        text: shareText,
+        url: window.location.href
+      }).catch(() => {});
+    } else {
+      // Fallback: copier dans le presse-papier
+      navigator.clipboard.writeText(shareText);
+      alert('Lien copié dans le presse-papier !');
+    }
+  };
 
   if (loading) {
     return (
@@ -287,7 +522,7 @@ const handleBooking = async (eventId: string | number) => {
         </motion.button>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Event Details */}
+          {/* Event Details - Same as before */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -304,7 +539,6 @@ const handleBooking = async (eventId: string | number) => {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
                 
-                {/* AI Match Score */}
                 <div className="absolute top-4 right-4">
                   <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 backdrop-blur-sm border border-green-500/30 rounded-full px-4 py-2 flex items-center space-x-2">
                     <Sparkles className="w-5 h-5 text-green-400" />
@@ -312,7 +546,6 @@ const handleBooking = async (eventId: string | number) => {
                   </div>
                 </div>
 
-                {/* Event Info Overlay */}
                 <div className="absolute bottom-6 left-6 right-6">
                   <h1 className="text-3xl font-bold text-white mb-2">{event.title}</h1>
                   <div className="flex items-center space-x-4 text-gray-200">
@@ -335,7 +568,6 @@ const handleBooking = async (eventId: string | number) => {
               <div className="p-6">
                 <p className="text-gray-300 leading-relaxed mb-6">{event.description}</p>
                 
-                {/* Tags */}
                 <div className="flex flex-wrap gap-2 mb-6">
                   {event.tags.map((tag) => (
                     <span
@@ -347,7 +579,6 @@ const handleBooking = async (eventId: string | number) => {
                   ))}
                 </div>
 
-                {/* Quick Stats */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-white/5 rounded-xl p-4 text-center">
                     <UserPlus className="w-6 h-6 text-blue-400 mx-auto mb-2" />
@@ -430,7 +661,7 @@ const handleBooking = async (eventId: string | number) => {
             </div>
           </motion.div>
 
-          {/* Booking Form */}
+          {/* Booking Form - Same as before, keeping all your existing form fields */}
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -730,9 +961,10 @@ const handleBooking = async (eventId: string | number) => {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-  onClick={() => {
-    if (eventId) handleBooking(eventId);
-  }}                  disabled={isBooking || !bookingData.agreeToTerms}
+                  onClick={() => {
+                    if (eventId) handleBooking(eventId);
+                  }}
+                  disabled={isBooking || !bookingData.agreeToTerms}
                   className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   {isBooking ? (
@@ -766,9 +998,9 @@ const handleBooking = async (eventId: string | number) => {
         </div>
       </div>
 
-      {/* Success Modal */}
+      {/* Success Modal with Download Ticket */}
       <AnimatePresence>
-        {showConfirmation && (
+        {showConfirmation && bookingConfirmation && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -779,36 +1011,86 @@ const handleBooking = async (eventId: string | number) => {
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.5, opacity: 0 }}
-              className="bg-gradient-to-br from-green-500/20 to-blue-500/20 backdrop-blur-xl border border-green-500/30 rounded-3xl p-8 max-w-md w-full text-center"
+              className="bg-gradient-to-br from-green-500/20 to-blue-500/20 backdrop-blur-xl border border-green-500/30 rounded-3xl p-8 max-w-lg w-full"
             >
               <div className="w-20 h-20 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center mx-auto mb-6">
                 <CheckCircle className="w-10 h-10 text-white" />
               </div>
               
-              <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent mb-4">
+              <h2 className="text-3xl font-bold bg-gradient-to-r from-green-400 to-blue-400 bg-clip-text text-transparent mb-4 text-center">
                 Réservation confirmée !
               </h2>
               
-              <p className="text-gray-300 mb-6">
+              <p className="text-gray-300 mb-6 text-center">
                 Votre place pour <span className="text-white font-semibold">{event.title}</span> est confirmée. 
                 Vous recevrez un email de confirmation sous peu.
               </p>
 
-              <div className="bg-white/5 rounded-xl p-4 mb-6">
+              <div className="bg-white/5 rounded-xl p-4 mb-6 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-400">ID Réservation:</span>
+                  <span className="text-blue-400 font-mono font-bold text-xs">
+                    {bookingConfirmation.bookingId}
+                  </span>
+                </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-400">Billet:</span>
                   <span className="text-white font-medium">
-                    {ticketTypes.find(t => t.id === selectedTicketType)?.name}
+                    {bookingConfirmation.ticketType}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm mt-2">
+                <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-400">Date:</span>
                   <span className="text-white font-medium">{event.date}</span>
                 </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-400">Participant:</span>
+                  <span className="text-white font-medium">{bookingConfirmation.attendeeName}</span>
+                </div>
               </div>
 
-              <div className="text-sm text-gray-400">
-                Redirection vers vos événements dans 3 secondes...
+              {/* Download & Share Buttons */}
+              <div className="space-y-3 mb-6">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={downloadTicket}
+                  className="w-full px-6 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center space-x-2"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>Télécharger mon billet</span>
+                </motion.button>
+
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={shareTicket}
+                  className="w-full px-6 py-4 bg-white/10 border border-white/20 text-white font-semibold rounded-2xl hover:bg-white/20 transition-all duration-300 flex items-center justify-center space-x-2"
+                >
+                  <Share2 className="w-5 h-5" />
+                  <span>Partager l'événement</span>
+                </motion.button>
+              </div>
+
+              <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-4 mb-4">
+                <div className="flex items-start space-x-3">
+                  <Info className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <div className="text-sm text-gray-300">
+                    <p className="font-medium text-white mb-1">Important</p>
+                    <p>Présentez votre billet (numérique ou imprimé) à l'entrée de l'événement. Un QR code sera généré pour faciliter votre accès.</p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => navigate('/my-events')}
+                className="w-full px-6 py-3 bg-white/5 border border-white/10 text-white rounded-xl hover:bg-white/10 transition-all duration-300"
+              >
+                Voir mes événements
+              </button>
+
+              <div className="text-sm text-gray-400 text-center mt-4">
+                Redirection automatique dans quelques secondes...
               </div>
             </motion.div>
           </motion.div>

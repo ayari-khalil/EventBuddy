@@ -65,6 +65,7 @@ const Header = () => {
 
   // Navigation utilisateur connecté (USER)
   const userNav = [
+    { name: "Dashboard", href: "/dashboard", icon: User },
     { name: "Profil", href: "/profile", icon: User },
     { name: "Événements", href: "/events", icon: Calendar },
     { name: "my Events", href: "/my-events", icon: Users },
@@ -72,14 +73,28 @@ const Header = () => {
     { name: "Analytics", href: "/analytics", icon: BarChart3 },
     { name: "Paramètres", href: "/settings", icon: SettingsIcon },
   ];
+    const adminNav = [
+    { name: "Événements", href: "/events", icon: Calendar },
+    { name: "Messages", href: "/messages", icon: MessageCircle },
+    { name: "Analytics", href: "/admin/analytics", icon: BarChart3 },
+    { name: "Paramètres", href: "/settings", icon: SettingsIcon },
+    { name: "admin", href: "/admin", icon: SettingsIcon },
+    { name: "users", href: "/admin/users", icon: SettingsIcon },
+    { name: "reports", href: "/admin/reports", icon: SettingsIcon },
+    { name: "approvals", href: "/admin/approvals", icon: SettingsIcon },
 
-  // Si admin → ajoute le bouton dashboard admin
-  if (user?.role === "ADMIN") {
-    userNav.push({ name: "Admin", href: "/admin", icon: Shield });
-  }
+  ];
 
-  const navigation = user ? userNav : publicNav;
+  // // Si admin → ajoute le bouton dashboard admin
+  // if (user?.role === "ADMIN") {
+  //   userNav.push({ name: "Admin", href: "/admin", icon: Shield });
+  // }
 
+const navigation = user
+  ? user?.role === "ADMIN"
+    ? adminNav   // si connecté et admin → menu admin
+    : userNav    // si connecté mais pas admin → menu user
+  : publicNav;   // si pas connecté → menu public
   return (
     <motion.header
       initial={{ y: -100 }}
